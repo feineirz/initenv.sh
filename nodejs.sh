@@ -2,10 +2,11 @@
 
 clear
 echo "===== NODEJS INITAILIZE SCRIPT ====="
+# Local GIT repository
 echo ""
 echo ">> Initailize local Git repository..."
 read -p "Repository name: " repoName
-read -p "Branch name (main / master or anything): " branchName
+read -p "Branch name (main, master or anything): " branchName
 
 mkdir $repoName
 cd $repoName
@@ -148,6 +149,8 @@ dist
 .uploads/
 
 EOF
+
+# Prettier
 echo ""
 read -p "Use prettier? (y/n): " usePrettier
 if [ $usePrettier = "y" ] ; then
@@ -168,10 +171,13 @@ fi
 echo ""
 echo ">> Generating NodeJS environment..."
 
+# Create directories and files structure
 touch app.js
 	cat > app.js << EOF
 // Initialize
 const path = require('path')
+
+const express = require('express')
 // End Initialize
 
 
@@ -205,8 +211,8 @@ EOF
 
 touch .env
 
-mkdir models views controllers routes auths middlewares utils config public
-mkdir public/images public/css public/js public/uploads
+mkdir models views controllers routes apis auths middlewares utils config public
+mkdir public/images public/css public/js public/uploads routes/api
 
 cd config
 touch database.js server.js
@@ -216,6 +222,7 @@ cd public/css
 touch main.css container.css nav.css form.css text.css colors.css decore.css
 cd ../..
 
+# Install NodeJS packages
 echo ""
 echo ">> Installing node packages..."
 echo "Installing dotenv bcryptjs @types/node randomstring nodemon morgan"
@@ -225,31 +232,108 @@ echo ""
 echo "Main stack"
 echo "1. express mongoose"
 echo "2. express mysql2"
-read -p "Select stack: " stackId
+read -p "Select stack: " mainStackId
 
-if [ $stackId = "1" ] ; then
-	echo "Installing express mongoose"
-	npm i --save express mongoose
+# Session
+read -p "Use session? (y/n): " useSession
+
+# Express
+echo "Installing express"
+npm i --save express
+
+# Mongoose or MySQl2
+if [ $mainStackId = "1" ] ; then
+	cat > .env << EOF
+MONGODB_URI = 'mongodb://127.0.0.1:27017/$repoName'
+
+EOF
+	
+	echo "Installing mongoose"
+	npm i --save mongoose
 	sed -i "/\/\/ End Initialize/i \
-const express = require('express')\n\
-const mongoose = require('mongoose')\n\n\
-const app = express()\n
+const mongoose = require('mongoose')\n\
 	" app.js
-elif [ $stackId = "2" ] ; then
-	echo "Installing express mysql2"
-	npm i --save express mysql2
-	sed -i "/\/\/ End Initialize/i \
-const express = require('express')\n\
-const mysql = require('mysql2')\n\n\
-const app = express()\n
+	
+	if [ $useSession = "y" ] ; then
+		echo "Installing express-session connect-mongodb-session"
+		npm i --save express-session connect-mongodb-session
+		sed -i "/\/\/ End Initialize/i \
+const session = require('express-session')\n\
+const MongoDBStore = require('connect-mongodb-session')(session)\n\n\
+const store = new MongoDBStore({\n\
+  uri: process.env.MONGODB_URI,\n\
+  collection: 'sessions'\n\
+})\n\
+store.on('error', error => {\n\
+  console.log(error)\n\
+})\n\
 	" app.js
+	
+		sed -i "/\/\/ Middlewares/a \
+app.use(session)({\n\
+  secret: 'secret key',\n\
+  cookie: {\n\
+	maxAge: 1000 * 60 * 60 * 24 * 7 // 1 week\n\
+  },\n\
+  store: store,\n\
+  resave: true,\n\
+  saveUninitialized: true\n\
+})\n\
+		" app.js	
+	fi
+elif [ $mainStackId = "2" ] ; then
+	cat > .env << EOF
+MYSQL_HOST = '127.0.0.1'
+MYSQL_DATABASE = '$repoName'
+MYSQL_USER = 'root'
+MYSQL_PASSWORD = ''
+
+EOF
+	echo "Installing mysql2"
+	npm i --save mysql2
+	
+	cat > config/database.js << EOF
+const mysql = require('mysql2')
+exports.connectionPool = mysql.createPool({
+	host: process.env.MYSQL_HOST,
+	database: process.env.MYSQL_DATABASE,
+	user: process.env.MYSQL_USER,
+	password: process.env.MYSQL_PASSWORD,
+}).promise()
+EOF
+	
+	if [ $useSession ] ; then
+		echo "Installing express-session"
+		npm i --save express-session
+		sed -i "/\/\/ End Initialize/i \
+const session = require('express-session')\n\
+	" app.js
+	
+	sed -i "/\/\/ Middlewares/a \
+app.use(session)({\n\
+  secret: 'secret key',\n\
+  cookie: {\n\
+	maxAge: 1000 * 60 * 60 * 24 * 7 // 1 week\n\
+  },\n\
+  resave: true,\n\
+  saveUninitialized: true\n\
+})\n\
+		" app.js	
+	fi
 fi
 
+
+
+sed -i "/\/\/ End Initialize/i \
+const app = express()\n
+	" app.js
+
+# EJS
 read -p "Use EJS view engine? (y/n): " useEJS
 if [ $useEJS = "y" ] ; then
 	echo "Installing ejs"
 	sed -i "/app.set('views', 'views')/a \
-app.set('view engine', 'ejs')\n
+app.set('view engine', 'ejs')\
 	" app.js
 	
 	npm i --save ejs
