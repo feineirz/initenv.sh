@@ -188,6 +188,7 @@ app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
 
 app.use(express.static(path.join(__dirname, 'public')))
+
 // End App config
 
 
@@ -235,6 +236,7 @@ echo "2. express mysql2"
 read -p "Select stack: " mainStackId
 
 # Session
+echo ""
 read -p "Use session? (y/n): " useSession
 
 # Express
@@ -266,6 +268,7 @@ const store = new MongoDBStore({\n\
 })\n\
 store.on('error', error => {\n\
   console.log(error)\n\
+  process.exit(1)\n\
 })\n\
 	" app.js
 	
@@ -273,13 +276,29 @@ store.on('error', error => {\n\
 app.use(session)({\n\
   secret: 'secret key',\n\
   cookie: {\n\
-	maxAge: 1000 * 60 * 60 * 24 * 7 // 1 week\n\
+		maxAge: 1000 * 60 * 60 * 24 * 7 // 1 week\n\
   },\n\
   store: store,\n\
   resave: true,\n\
   saveUninitialized: true\n\
 })\n\
-		" app.js	
+		" app.js
+	
+		sed -i "/\/\/ Connect database and running the server/a \
+const serverPort = process.env.PORT || 3000\n\
+mongoose\n\
+	.connect(process.env.MONGODB_URI)\n\
+    .then(result => {\n\
+      console.log('MongoDB database connected.')\n\n\
+      app.listen(serverPort, result => {\n\
+          console.log(\`Listening on port \${serverPort}...\`)\n\
+      })\n\
+    })\n\
+    .catch(err => {\n\
+      console.log('Error occurred while starting the server\!\!\!')\n\
+      process.exit(3)\n\
+    })\n\
+		" app.js
 	fi
 elif [ $mainStackId = "2" ] ; then
 	cat > .env << EOF
@@ -313,12 +332,19 @@ const session = require('express-session')\n\
 app.use(session)({\n\
   secret: 'secret key',\n\
   cookie: {\n\
-	maxAge: 1000 * 60 * 60 * 24 * 7 // 1 week\n\
+		maxAge: 1000 * 60 * 60 * 24 * 7 // 1 week\n\
   },\n\
   resave: true,\n\
   saveUninitialized: true\n\
 })\n\
 		" app.js	
+	
+		sed -i "/\/\/ Connect database and running the server/a \
+const serverPort = process.env.PORT || 3000\n\
+app.listen(serverPort, result => {\n\
+  console.log(\`Listening on port \${serverPort}...\`)\n\
+})\n\
+		" app.js
 	fi
 fi
 
@@ -329,6 +355,7 @@ const app = express()\n
 	" app.js
 
 # EJS
+echo ""
 read -p "Use EJS view engine? (y/n): " useEJS
 if [ $useEJS = "y" ] ; then
 	echo "Installing ejs"
