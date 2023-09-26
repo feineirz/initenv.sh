@@ -193,8 +193,19 @@ app.use(express.static(path.join(__dirname, 'public')))
 
 
 // Middlewares
+app.use(morgan('dev'))
 // End Middlewares
 
+
+
+// Access-Control
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Credentials', true)
+    res.header('Access-Control-Allow-Origin', '*')
+    res.header('Access-Control-Allow-Methods', 'POST, GET, PUT, PATCH, DELETE')
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization')
+    next()
+})
 
 // Response local variables
 // End Response local variables
