@@ -162,7 +162,7 @@ if [ $usePrettier = "y" ] ; then
 	"semi": false,
 	"singleQuote": true,
 	"arrowParens": "avoid",
-	"tabWidth": 2,
+	"tabWidth": 4,
 	"printWidth": 90
 }
 EOF
@@ -175,7 +175,9 @@ echo ">> Generating NodeJS environment..."
 touch app.js
 	cat > app.js << EOF
 // Initialize
+require('dotenv').config()
 const path = require('path')
+const morgan = require('morgan')
 
 const express = require('express')
 // End Initialize
@@ -204,6 +206,7 @@ app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*')
     res.header('Access-Control-Allow-Methods', 'POST, GET, PUT, PATCH, DELETE')
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization')
+
     next()
 })
 
@@ -284,7 +287,7 @@ store.on('error', error => {\n\
 	" app.js
 	
 		sed -i "/\/\/ Middlewares/a \
-app.use(session)({\n\
+app.use(session({\n\
   secret: 'secret key',\n\
   cookie: {\n\
 		maxAge: 1000 * 60 * 60 * 24 * 7 // 1 week\n\
@@ -292,10 +295,26 @@ app.use(session)({\n\
   store: store,\n\
   resave: true,\n\
   saveUninitialized: true\n\
-})\n\
+}))\n\
 		" app.js
+		
+# Flash message
+		echo ""
+		read -p "Use Connect Flash? (y/n): " useFlashMessage
+		if [ $useFlashMessage = "y" ] ; then
+			echo "Installing connect-flash"
+			npm i --save connect-flash
+			sed -i "/\/\/ End Initialize/i \
+const flash = require('connect-flash')\n\
+			" app.js
 	
-		sed -i "/\/\/ Connect database and running the server/a \
+			sed -i "/\/\/ End Middlewares/i \
+app.use(flash())\n\
+			" app.js			
+		fi
+	fi
+	
+	sed -i "/\/\/ Connect database and running the server/a \
 const serverPort = process.env.PORT || 3000\n\
 mongoose\n\
 	.connect(process.env.MONGODB_URI)\n\
@@ -310,7 +329,6 @@ mongoose\n\
       process.exit(3)\n\
     })\n\
 		" app.js
-	fi
 elif [ $mainStackId = "2" ] ; then
 	cat > .env << EOF
 MYSQL_HOST = '127.0.0.1'
@@ -340,14 +358,14 @@ const session = require('express-session')\n\
 	" app.js
 	
 	sed -i "/\/\/ Middlewares/a \
-app.use(session)({\n\
+app.use(session({\n\
   secret: 'secret key',\n\
   cookie: {\n\
-		maxAge: 1000 * 60 * 60 * 24 * 7 // 1 week\n\
+	maxAge: 1000 * 60 * 60 * 24 * 7 // 1 week\n\
   },\n\
   resave: true,\n\
   saveUninitialized: true\n\
-})\n\
+}))\n\
 		" app.js	
 	
 		sed -i "/\/\/ Connect database and running the server/a \
@@ -373,14 +391,122 @@ if [ $useEJS = "y" ] ; then
 	sed -i "/app.set('views', 'views')/a \
 app.set('view engine', 'ejs')\
 	" app.js
+	sed -i "/\/\/ Response local variables/a \
+app.use((req, res, next) => {\n\
+	res.locals.pageTitle = '$repoName'\n\n\
+	next()\n\
+})\n\
+	" app.js
 	
 	npm i --save ejs
 	mkdir views/partials
 	cd views/partials
 	touch header.ejs joint.ejs footer.ejs nav.ejs
+	cat > header.ejs << EOF
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+     <link rel="stylesheet" href="css/main.css">
+    
+    <title><%= pageTitle %></title>
+EOF
+	cat > joint.ejs << EOF
+	
+  </head>
+  <body>
+EOF
+	cat > footer.ejs << EOF
+	
+  </body>
+</html>
+EOF
 	cd ../
 	touch index.ejs
+	cat > index.ejs << EOF
+<%- include('./partials/header.ejs') %>
+<!-- Extra header contents -->
+
+<%- include('./partials/joint.ejs') %>
+<!-- Body contents -->
+
+<%- include('./partials/footer.ejs') %>
+EOF
 	cd ../
+	
+	cat > .prettierignore << EOF
+# EJS Partials
+views/partials/*.ejs
+
+EOF
+
 fi
+
+# Welcome Home Page
+echo ""
+read -p "Create welcome homepage? (y/n): " createHomepage
+if [ $createHomepage = "y" ] ; then
+
+	# CSS
+	cat > public/css/main.css << EOF
+@import url('https://fonts.googleapis.com/css2?family=Sofia+Sans&display=swap');
+
+body {
+	font-family: 'Sofia Sans', sans-serif;
+}
+EOF
+
+
+	# EJS
+	if [ $useEJS = "y" ] ; then
+		cat > controllers/homeController.js << EOF
+exports.getHome = (req, res) => {
+    res.render('index', {
+        pageTitle: '$repoName - Home',
+    })
+}
+EOF
+		sed -i "/<!-- Body contents -->/a \
+	<h1>WELCOME HOME PAGE<\/h1>\n\
+	<p>Environment initialization successful.<\/p>\n\
+		" views/index.ejs
+	else
+		cat > controllers/homeController.js << EOF
+exports.getHome = (req, res) => {
+    res.send('<h1>WELCOME HOME PAGE</h1><br/><p>Environment initialization successful.</p><br/>')
+}
+EOF
+	fi
+	
+	cat > routes/homeRoutes.js << EOF
+const routes = require('express').Router()
+const homeController = require('../controllers/homeController')
+
+routes.get('/', homeController.getHome)
+
+module.exports = routes
+EOF
+	sed -i "/\/\/ Routes/a \
+const homeRoutes = require('./routes/homeRoutes')\n\n\
+app.use(homeRoutes)\n\
+	" app.js
+
+fi
+
+# npm init
+echo ""
+echo ">> Initialize application..."
+npm init
+
+sed -i '/"scripts": {/a \
+	"dev": "nodemon app.js",\n\
+	"start": "node app.js",\n\
+	' package.json
+
+echo ""
+echo "Environment initialization successful."
+
 
 
