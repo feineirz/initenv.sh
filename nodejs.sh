@@ -1,10 +1,10 @@
 #! /bin/bash
 
 clear
-echo "===== NODEJS INITAILIZE SCRIPT ====="
+echo "===== NODEJS-EXPRESS ENVIRONMENT INITAILIZE SCRIPT ====="
 # Local GIT repository
 echo ""
-echo ">> Initailize local Git repository..."
+echo ">> Initialize local Git repository..."
 read -p "Repository name: " repoName
 read -p "Branch name (main, master or anything): " branchName
 
@@ -166,6 +166,13 @@ if [ $usePrettier = "y" ] ; then
 	"printWidth": 90
 }
 EOF
+
+	cat > .prettierignore << EOF
+**/.git
+**/.svn
+**/.hg
+**/node_modules
+EOF
 fi
 
 echo ""
@@ -211,6 +218,13 @@ app.use((req, res, next) => {
 })
 
 // Response local variables
+app.use((req, res, next) => {
+	// Response local variable list
+
+	// End Response local variable list
+
+	next()
+})
 // End Response local variables
 
 
@@ -335,7 +349,7 @@ exports.connectionPool = mysql.createPool({
 }).promise()
 EOF
 	
-	if [ $useSession ] ; then
+	if [ $useSession = "y" ] ; then
 		echo "Installing express-session"
 		npm i --save express-session
 		sed -i "/\/\/ End Initialize/i \
@@ -363,20 +377,50 @@ app.listen(serverPort, result => {\n\
 fi
 
 # Flash message
-if [ $useSession ] ; then
-			echo ""
-			read -p "Use Connect Flash? (y/n): " useConnectFlash
-			if [ $useConnectFlash = "y" ] ; then
-				echo "Installing connect-flash"
-				npm i --save connect-flash
-				sed -i "/\/\/ End Initialize/i \
+if [ $useSession = "y" ] ; then
+	echo ""
+	read -p "Use Connect Flash? (y/n): " useConnectFlash
+	if [ $useConnectFlash = "y" ] ; then
+		echo "Installing connect-flash"
+		npm i --save connect-flash
+		sed -i "/\/\/ End Initialize/i \
 const flash = require('connect-flash')\n\
-				" app.js
-		
-				sed -i "/\/\/ End Middlewares/i \
+		" app.js
+
+		sed -i "/\/\/ End Middlewares/i \
 app.use(flash())\n\
-				" app.js			
-			fi
+		" app.js
+
+		cat > public/css/connect-flash.css << EOF
+.flash__container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: fit-content;
+    padding: 0.5em;
+}
+.flash__container.success {
+    color: white;
+    background-color: var(--background-success);
+}
+.flash__container.warning {
+    color: black;
+    background-color: var(--background-warning);
+}
+.flash__container.error {
+    color: white;
+    background-color: var(--background-error);
+}
+.flash__container .message {
+    margin: 0;
+    font-size: 12px;
+    font-style: italic;
+}
+EOF
+
+	fi
 fi
 
 # Multer and Sharp-Multer
@@ -467,63 +511,154 @@ echo ""
 read -p "Use EJS view engine? (y/n): " useEJS
 if [ $useEJS = "y" ] ; then
 	echo "Installing ejs"
+	npm i --save ejs
+
 	sed -i "/app.set('views', 'views')/a \
 app.set('view engine', 'ejs')\
 	" app.js
-	sed -i "/\/\/ Response local variables/a \
-app.use((req, res, next) => {\n\
-	res.locals.pageTitle = '$repoName'\n\n\
-	next()\n\
-})\n\
+
+	sed -i "/\/\/ Response local variable list/a \
+	res.locals.pageTitle = '$repoName'\
 	" app.js
-	
-	npm i --save ejs
+
 	mkdir views/partials
 	cd views/partials
-	touch header.ejs joint.ejs footer.ejs nav.ejs
-	cat > header.ejs << EOF
+	touch head.ejs joint.ejs footer.ejs nav.ejs
+
+	cat > head.ejs << EOF
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    
-    <link rel="stylesheet" href="css/main.css">
-    
-    <title><%= pageTitle %></title>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+		<!-- Bootstrap 5.2 -->
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+
+		<!-- Sweetalert2 -->
+		<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+		<!-- Internal CSS -->
+		<link rel="stylesheet" href="css/main.css">
+		<link rel="stylesheet" href="css/container.css">
+		<link rel="stylesheet" href="css/nav.css">
+		<link rel="stylesheet" href="css/form.css">
+		<link rel="stylesheet" href="css/decore.css">
+		<link rel="stylesheet" href="css/colors.css">
+		<link rel="stylesheet" href="css/text.css">
+		
+		<title><%= pageTitle %></title>
 EOF
 	cat > joint.ejs << EOF
-	
-  </head>
-  <body>
+		
+	</head>
+	<body>
 EOF
+
 	cat > footer.ejs << EOF
-	
-  </body>
+		
+		<footer>
+			<!-- Footer content -->
+
+		</footer>
+
+		<!-- Bootstrap 5.2 -->
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+  	</body>
 </html>
 EOF
+
+# Connect-Flash EJS
+	if [ $useConnectFlash = "y" ] ; then
+		cat > connect-flash-swal.ejs << EOF
+<!-- Passing to SweetAlert2 -->
+<% if (flashSwal[0]) { %>
+<input type="hidden" name="swalType" id="swalType" value="<%= flashSwal[0].type %>">
+<input type="hidden" name="swalTitle" id="swalTitle" value="<%= flashSwal[0].title %>">
+<input type="hidden" name="swalMessage" id="swalMessage" value="<%= flashSwal[0].message %>">
+<input type="hidden" name="swalDetails" id="swalDetails" value="<%= flashSwal[0].details %>">
+<input type="hidden" name="swalFooter" id="swalFooter" value="<%= flashSwal[0].footer %>">	
+<% } %>
+EOF
+	fi
+
 	cd ../
-	touch index.ejs
+
 	cat > index.ejs << EOF
-<%- include('./partials/header.ejs') %>
-<!-- Extra header contents -->
+<%- include('./partials/head.ejs') %>
+<!-- Extra head contents (eg. meta, link, style, or script) -->
 
 <%- include('./partials/joint.ejs') %>
 <!-- Body contents -->
+		<header>
+			<!-- Header content -->
+
+		</header>
+
+		<main>
+			<!-- Main content -->
+
+		</main>
 
 <%- include('./partials/footer.ejs') %>
 EOF
+
+	if [ $useConnectFlash = "y" ] ; then
+		sed -i "/<\/header>/a \
+<%- include('./partials/connect-flash-swal.ejs') %>\n\
+		" index.ejs
+	fi
+
 	cd ../
+
+	if [ $useConnectFlash = "y" ] ; then
+		sed -i "/\/\/ End Response local variable list/i \
+	res.locals.flashSwal = req.flash('flashSwal')\n\
+		" app.js
+
+		sed -i "/<\!-- Internal CSS -->/a \
+		<link rel=\"stylesheet\" href=\"css/connect-flash.css\">
+		" views/partials/head.ejs
+
+		cat > public/js/swals.js << EOF
+function flashSwal() {
+    try {
+        const swalType = document.querySelector('input#swalType').value
+        const swalTitle = document.querySelector('input#swalTitle').value
+        const swalMessage = document.querySelector('input#swalMessage').value
+        const swalDetails = document.querySelector('input#swalDetails').value
+        const swalFooter = document.querySelector('input#swalFooter').value
+        swal.fire({
+            icon: swalType,
+            title: swalTitle,
+            html: swalDetails ? swalMessage + '<hr/><i>' + swalDetails + '</i>' : swalMessage,
+            footer: swalFooter,
+            timer: 30000,
+            timerProgressBar: true,
+        })
+    } catch (error) {
+        // pass
+    }
+}
+EOF
+
+		sed -i "/<\/head>/i \
+		<script src=\"/js/swals.js\"></script>\n\
+		" views/partials/joint.ejs
+
+		sed -i "s/<body>/<body onload=\"flashSwal()\">/g" views/partials/joint.ejs
+	fi
 	
-	cat > .prettierignore << EOF
-# EJS Partials
-views/partials/*.ejs
+	cat >> .prettierignore << EOF
+
+# EJS files
+*.ejs
 
 EOF
 
 fi
 
-# Welcome Home Page
+# Welcome Homepage
 echo ""
 read -p "Create welcome homepage? (y/n): " createHomepage
 if [ $createHomepage = "y" ] ; then
@@ -532,11 +667,33 @@ if [ $createHomepage = "y" ] ; then
 	cat > public/css/main.css << EOF
 @import url('https://fonts.googleapis.com/css2?family=Sofia+Sans&display=swap');
 
-body {
-	font-family: 'Sofia Sans', sans-serif;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
-EOF
 
+body {
+    font-family: 'Sofia Sans', sans-serif;
+}
+
+a,
+a:link {
+    text-decoration: none;
+}
+
+.welcome-box {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin: 25vh auto;
+    padding: 3em;
+    border: 2px #333 solid;
+    border-radius: 7px;
+}
+
+EOF
 
 	# EJS
 	if [ $useEJS = "y" ] ; then
@@ -546,15 +703,76 @@ exports.getHome = (req, res) => {
         pageTitle: '$repoName - Home',
     })
 }
+
+exports.getHomeSwal = (req, res) => {
+	req.flash('flashSwal', {
+            type: 'success',
+            title: 'Setup Completed',
+            message: 'Connect-Flash-Swal ready',
+            details: 'Connect-Flash and SweetAlert2 setup successful.',
+            footer: '',
+        })
+		res.redirect('/')
+}
 EOF
-		sed -i "/<!-- Body contents -->/a \
-	<h1>WELCOME HOME PAGE<\/h1>\n\
-	<p>Environment initialization successful.<\/p>\n\
+		sed -i "/<main>/a \
+			<div class=\"container\">\n\
+				<div class=\"welcome-box\">\n\
+					<h1><b>WELCOME HOMEPAGE</b></h1>\n\
+					<h3><b>Environment initialization successful.</b></h3>\n\
+					<h5>You are ready to roll</h5>\n\n\
+					<hr>\n\
+					<p><a href=\"/flashswal\"><button class=\"btn btn-primary\">Test FlashSwal</button></a></p>\n\
+					<hr>\n\
+					<p>\n\
+						<i><small>Generated by: feinz (<a href=mailto:feineirz@live.com>feineirz@live.com</a>)</small></i>\n\
+					</p>\n\
+				</div>\n\
+			</div>\n\
 		" views/index.ejs
 	else
 		cat > controllers/homeController.js << EOF
 exports.getHome = (req, res) => {
-    res.send('<h1>WELCOME HOME PAGE</h1><br/><p>Environment initialization successful.</p><br/>')
+	const html = '''
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+		<!-- For Bootstrap -->
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+
+		<link rel="stylesheet" href="css/main.css">
+		
+		<title>$repoName - Home</title>	
+	</head>
+	<body>
+		<header></header>
+
+		<main>
+			<div class="container">
+				<div class="welcome-box">
+					<h1><b>WELCOME HOMEPAGE</b></h1>
+					<h3><b>Environment initialization successful.</b></h3>
+					<h5>You are ready to roll</h5>
+					<p>
+						<!-- prettier-ignore -->
+						<i><small>Generated by: feinz (<a href="mailto:feineirz@live.com">feineirz@live.com</a>)</small></i>
+					</p>
+				</div>
+			</div>
+		</main>	
+
+		<footer></footer>
+
+		<!-- For Bootstrap -->
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+
+  	</body>
+</html>
+'''
+    res.send(html)
 }
 EOF
 	fi
@@ -564,6 +782,7 @@ const routes = require('express').Router()
 const homeController = require('../controllers/homeController')
 
 routes.get('/', homeController.getHome)
+routes.get('/flashswal', homeController.getHomeSwal)
 
 module.exports = routes
 EOF
@@ -612,6 +831,8 @@ fi
 
 echo ""
 echo "Environment initialization successful."
+echo ""
+echo "========================================================"
 
 
 
