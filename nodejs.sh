@@ -804,7 +804,7 @@ fi
 # npm init
 echo ""
 echo ">> Initialize application..."
-read -p "Press any key to Initialize application"
+read -p "Press any key to Initialize application" temp
 echo ""
 
 npm init
