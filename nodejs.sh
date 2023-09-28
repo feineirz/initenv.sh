@@ -277,24 +277,24 @@ const mongoose = require('mongoose')\n\
 const session = require('express-session')\n\
 const MongoDBStore = require('connect-mongodb-session')(session)\n\n\
 const store = new MongoDBStore({\n\
-  uri: process.env.MONGODB_URI,\n\
-  collection: 'sessions'\n\
+	uri: process.env.MONGODB_URI,\n\
+	collection: 'sessions'\n\
 })\n\
 store.on('error', error => {\n\
-  console.log(error)\n\
-  process.exit(1)\n\
+	console.log(error)\n\
+	process.exit(1)\n\
 })\n\
 	" app.js
 	
 		sed -i "/\/\/ Middlewares/a \
 app.use(session({\n\
-  secret: 'secret key',\n\
-  cookie: {\n\
+	secret: 'secret key',\n\
+	cookie: {\n\
 		maxAge: 1000 * 60 * 60 * 24 * 7 // 1 week\n\
-  },\n\
-  store: store,\n\
-  resave: true,\n\
-  saveUninitialized: true\n\
+	},\n\
+	store: store,\n\
+	resave: true,\n\
+	saveUninitialized: true\n\
 }))\n\
 		" app.js
 	fi
@@ -304,14 +304,14 @@ const serverPort = process.env.PORT || 3000\n\
 mongoose\n\
 	.connect(process.env.MONGODB_URI)\n\
     .then(result => {\n\
-      console.log('MongoDB database connected.')\n\n\
-      app.listen(serverPort, result => {\n\
-          console.log(\`Listening on port \${serverPort}...\`)\n\
-      })\n\
+		console.log('MongoDB database connected.')\n\n\
+		app.listen(serverPort, result => {\n\
+			console.log(\`Listening on port \${serverPort}...\`)\n\
+		})\n\
     })\n\
     .catch(err => {\n\
-      console.log('Error occurred while starting the server\!\!\!')\n\
-      process.exit(3)\n\
+		console.log('Error occurred while starting the server\!\!\!')\n\
+		process.exit(3)\n\
     })\n\
 		" app.js
 elif [ $mainStackId = "2" ] ; then
@@ -344,12 +344,12 @@ const session = require('express-session')\n\
 	
 	sed -i "/\/\/ Middlewares/a \
 app.use(session({\n\
-  secret: 'secret key',\n\
-  cookie: {\n\
-	maxAge: 1000 * 60 * 60 * 24 * 7 // 1 week\n\
-  },\n\
-  resave: true,\n\
-  saveUninitialized: true\n\
+  	secret: 'secret key',\n\
+	cookie: {\n\
+		maxAge: 1000 * 60 * 60 * 24 * 7 // 1 week\n\
+	},\n\
+	resave: true,\n\
+	saveUninitialized: true\n\
 }))\n\
 		" app.js	
 	
@@ -398,8 +398,11 @@ const multer = require('multer')
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
+        // Rename original file
+        // file.originalname = file.fieldname + path.extname(file.originalname)
+
         // Filtering path to save
-        if (file.fieldname === 'files') {
+        if (file.fieldname === 'file' || file.fieldname === 'files') {
             cb(null, 'public/uploads/files')
         } else {
             cb(null, 'public/uploads')
@@ -416,7 +419,7 @@ module.exports = multer({
 })
 EOF
 
-	cat > middlewares/imageUploader << EOF
+	cat > middlewares/imageUploader.js << EOF
 const path = require('path')
 
 const multer = require('multer')
@@ -425,12 +428,13 @@ const sharpMulter = require('sharp-multer')
 const storage = sharpMulter({
     destination: (req, file, cb) => {
         // Rename original file
-        file.originalname = file.fieldname + path.extname(file.originalname)
+        // file.originalname = file.fieldname + path.extname(file.originalname)
+
         // Filtering path to save
-        if (file.fieldname === 'user-image') {
-            cb(null, 'public/uploads/images/userimages')
-        } else {
+        if (file.fieldname === 'image' || file.fieldname === 'images') {
             cb(null, 'public/uploads/images')
+        } else {
+            cb(null, 'public/uploads')
         }
     },
     imageOptions: {
@@ -484,7 +488,7 @@ app.use((req, res, next) => {\n\
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
-     <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/main.css">
     
     <title><%= pageTitle %></title>
 EOF
@@ -577,8 +581,8 @@ echo ">> Initialize application..."
 npm init
 
 sed -i '/"scripts": {/a \
-	"dev": "nodemon app.js",\n\
-	"start": "node app.js",\n\
+	"dev": "nodemon app.js",\
+	"start": "node app.js",
 	' package.json
 
 git init
