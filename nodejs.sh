@@ -243,10 +243,6 @@ touch .env
 mkdir models views controllers routes apis auths middlewares utils config public
 mkdir public/images public/css public/js public/uploads routes/api
 
-cd public/images
-wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/favicon.png
-cd ../..
-
 cd config
 touch database.js server.js
 cd ..
@@ -669,6 +665,11 @@ fi
 echo ""
 read -p "Create welcome homepage? (y/n): " createHomepage
 if [ $createHomepage = "y" ] ; then
+
+	# favicon
+	cd public/images
+	wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/favicon.png
+	cd ../..
 
 	# CSS
 	cat > public/css/main.css << EOF
