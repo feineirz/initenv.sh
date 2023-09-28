@@ -146,7 +146,7 @@ dist
 .pnp.*
 
 # Uploads directories
-.uploads/
+.public/uploads/
 
 EOF
 
@@ -297,21 +297,6 @@ app.use(session({\n\
   saveUninitialized: true\n\
 }))\n\
 		" app.js
-		
-# Flash message
-		echo ""
-		read -p "Use Connect Flash? (y/n): " useFlashMessage
-		if [ $useFlashMessage = "y" ] ; then
-			echo "Installing connect-flash"
-			npm i --save connect-flash
-			sed -i "/\/\/ End Initialize/i \
-const flash = require('connect-flash')\n\
-			" app.js
-	
-			sed -i "/\/\/ End Middlewares/i \
-app.use(flash())\n\
-			" app.js			
-		fi
 	fi
 	
 	sed -i "/\/\/ Connect database and running the server/a \
@@ -377,10 +362,100 @@ app.listen(serverPort, result => {\n\
 	fi
 fi
 
+# Flash message
+if [ $useSession ] ; then
+			echo ""
+			read -p "Use Connect Flash? (y/n): " useConnectFlash
+			if [ $useConnectFlash = "y" ] ; then
+				echo "Installing connect-flash"
+				npm i --save connect-flash
+				sed -i "/\/\/ End Initialize/i \
+const flash = require('connect-flash')\n\
+				" app.js
+		
+				sed -i "/\/\/ End Middlewares/i \
+app.use(flash())\n\
+				" app.js			
+			fi
+fi
 
+# Multer and Sharp-Multer
+echo ""
+read -p "Use Multer and Sharp-Multer? (y/n): " useMulter
+if [ $useMulter ] ; then
+	echo "Installing multer sharp-multer"
+	npm i --save multer sharp-multer
 
+	mkdir public/uploads/files
+	mkdir public/uploads/images
+	touch public/uploads/files/.gitkeep
+	touch public/uploads/images/.gitkeep
+
+	cat > middlewares/fileUploader.js << EOF
+const path = require('path')
+
+const multer = require('multer')
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        // Filtering path to save
+        if (file.fieldname === 'files') {
+            cb(null, 'public/uploads/files')
+        } else {
+            cb(null, 'public/uploads')
+        }
+    },
+    filename: (req, file, cb) => {
+        cb(null, `file-${Date.now()}${path.extname(file.originalname)}`)
+    },
+})
+
+module.exports = multer({
+    storage: storage,
+    fileSize: 25 * 1024 * 1024,
+})
+EOF
+
+	cat > middlewares/imageUploader << EOF
+const path = require('path')
+
+const multer = require('multer')
+const sharpMulter = require('sharp-multer')
+
+const storage = sharpMulter({
+    destination: (req, file, cb) => {
+        // Rename original file
+        file.originalname = file.fieldname + path.extname(file.originalname)
+        // Filtering path to save
+        if (file.fieldname === 'user-image') {
+            cb(null, 'public/uploads/images/userimages')
+        } else {
+            cb(null, 'public/uploads/images')
+        }
+    },
+    imageOptions: {
+        useTimestamp: true,
+        fileFormat: 'jpg',
+        quality: 90,
+        resize: {
+            width: 1000,
+            height: 1000,
+            resizeMode: 'cover',
+        },
+    },
+})
+
+module.exports = multer({
+    storage: storage,
+    fileSize: 5 * 1024 * 1024,
+})
+EOF
+
+fi
+
+# place app at last of init phase
 sed -i "/\/\/ End Initialize/i \
-const app = express()\n
+const app = express()\n\
 	" app.js
 
 # EJS
@@ -498,12 +573,38 @@ fi
 # npm init
 echo ""
 echo ">> Initialize application..."
+
 npm init
 
 sed -i '/"scripts": {/a \
 	"dev": "nodemon app.js",\n\
 	"start": "node app.js",\n\
 	' package.json
+
+git init
+git add *
+git add .gitignore .prettierrc .prettierignore
+git commit -m "first initialize commit"
+git branch -M $branchName
+
+echo ""
+read -p "Use github repository? (y/n): " useGithub
+if [ $useGithub = "y" ] ; then
+	echo ""
+	read -p "Github username: " ghUsername
+	read -p "Using HTTPS or SSH? (https/ssh)" ghMethod
+	if [ $ghMethod == "https" ] ; then
+		git remote add origin https://github.com/$ghUsername/$repoName.git
+		git push -u origin $branchName
+		git config --global credential.helper store
+	elif [ $ghMethod == "ssh" ] ; then
+		git remote add origin git@github.com:$ghUsername/$repoName.git
+		git remote set-url origin git@github.com:$ghUsername/$repoName.git
+		git push -u origin $branchName
+	else
+		echo "Invalid parameter"
+	fi
+fi
 
 echo ""
 echo "Environment initialization successful."
