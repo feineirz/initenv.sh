@@ -1,3 +1,19 @@
+/*
+Form element attribute references
+	data-validation-rule="<rulename>" \\ Name to references in the validationRules file.
+	data-validation-api-token="<apiToken>" \\ Token to passing to the API from headers.Authorization
+	data-validation-is-exist-endpoint="<api endpoint url>" \\ API endpoint url to check data is exists
+	data-validation-is-exist-self-id="<self objectId>" \\ Id to ignore when check the data is exists in update mode
+
+IsExists validation API guide
+	...
+	const data = await model.find()
+	return res.status(200).json({
+		success: true,
+		data: data
+	})
+*/
+
 import { rules } from './validationRules.js';
 
 let characterSet = {
