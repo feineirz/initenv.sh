@@ -18,9 +18,9 @@ textTransform references
 	SentenceCapitalize-force: Uppercase first letter of the sentence and turns the left to lowercase
 
 rules = {
-    <rulename>: { // Name to refer from "data-validation-rule" attribute of form element
-        minLength: <number>, // Minimum text length from "minlength" attribute of form element
-        maxLength: <number>, // Maximum text length from "maxlength" attribute of form element
+    <rulename>: { // Name to refer from "data-validation-rule" attribute of the form element
+        minLength: <number>, // Minimum text length to set "minlength" attribute of the form element ***if set minlength attribute in element, it will override this value
+        maxLength: <number>, // Maximum text length to set "maxlength" attribute of the form element ***if set maxlength attribute in element, it will override this value
         allowSpaces: <true, false>, // Remove any space from input if set to false
         multiline: <true, false>, // Allow multi line if set to true else remove /n/r
         allowCharacterSet: {
