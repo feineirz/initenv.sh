@@ -853,14 +853,28 @@ if [ $useGithub = "y" ] ; then
 		git push -u origin $branchName
 	else
 		echo "Invalid parameter"
-		echo "Skip Github config, you can manually config later."
+		echo "Skip Github config, you can manually config it later."
 	fi
 fi
+
+echo ""
+read -p "Running VSCode after initialize? (y/n): " runCode
+
+echo ""
+read -p "Running applicaton in developer mode after initialize? (y/n)" runDev
 
 echo ""
 echo "Environment initialization successful."
 echo ""
 echo "========================================================"
+
+if [ runCode = "y" ] ; then
+	code .
+fi
+
+if [ runDev = "y" ] ; then
+	npm run dev
+fi
 
 
 
