@@ -404,8 +404,7 @@ app.use(flash())\n\
 
 		cd public/css
 		wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/connect-flash.css
-		cd../..
-
+		cd ../..
 	fi
 fi
 
@@ -709,13 +708,13 @@ EOF
 
 			cd public/css			
 			wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/form-validator.css
-			cd../..
+			cd ../..
 
-			sed -i "/<%- include('.\/partials\/joint.ejs') %>/i
+			sed -i "/<%- include('.\/partials\/joint.ejs') %>/i \
 		<link rel=\"stylesheet\" href=\"css/form-validator.css\">
 			" views/index.ejs
 
-			sed -i "/<%- include('.\/partials\/footer.ejs') %>/i
+			sed -i "/<%- include('.\/partials\/footer.ejs') %>/i \
 		<script type=\"module\" src=\"js\/formValidator.js\"><\/script>
 			" views/index.ejs
 		fi
@@ -866,11 +865,11 @@ echo "Environment initialization successful."
 echo ""
 echo "========================================================"
 
-if [ runCode = "y" ] ; then
+if [ $runCode = "y" ] ; then
 	code .
 fi
 
-if [ runDev = "y" ] ; then
+if [ $runDev = "y" ] ; then
 	npm run dev
 fi
 
