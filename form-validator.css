@@ -1,0 +1,88 @@
+form {
+	--fv-background-default: #c2e5f08c;
+	--fv-background-success: #0051808c;
+	--fv-background-warning: #ffae008f;
+	--fv-background-error: #e70f0fa4;
+}
+
+form input,
+form select,
+form textarea {
+	padding: 0.25em 0.5em;
+	border: solid 1px var(--fv-background-default);
+	outline: solid 1px var(--fv-background-default);
+	box-shadow: 0 0 2px 2px var(--fv-background-default);
+}
+form input.success,
+form select.success,
+form textarea.success {
+	border: solid 1px var(--fv-background-success) !important;
+	box-shadow: 0 0 3px var(--fv-background-success) !important;
+}
+form input.warning,
+form select.warning,
+form textarea.warning {
+	border: solid 1px var(--fv-background-warning) !important;
+	box-shadow: 0 0 3px var(--fv-background-warning) !important;
+}
+form input.error,
+form select.error,
+form textarea.error {
+	border: solid 1px var(--fv-background-error) !important;
+	box-shadow: 0 0 3px var(--fv-background-error) !important;
+}
+
+form input:focus,
+form select:focus,
+form textarea:focus {
+	border: solid 1px var(--fv-background-default) !important;
+	outline: solid 2px var(--fv-background-default) !important;
+	box-shadow: 0 0 5px var(--fv-background-default) !important;
+}
+form input.success:focus,
+form select.success:focus,
+form textarea.success:focus {
+	border: solid 1px var(--fv-background-success) !important;
+	outline: solid 1px var(--fv-background-success) !important;
+	box-shadow: 0 0 7px var(--fv-background-success) !important;
+}
+form input.warning:focus,
+form select.warning:focus,
+form textarea.warning:focus {
+	border: solid 1px var(--fv-background-warning) !important;
+	outline: solid 1px var(--fv-background-warning) !important;
+	box-shadow: 0 0 7px var(--fv-background-warning) !important;
+}
+form input.error:focus,
+form select.error:focus,
+form textarea.error:focus {
+	border: solid 1px var(--fv-background-error) !important;
+	outline: solid 1px var(--fv-background-error) !important;
+	box-shadow: 0 0 7px var(--fv-background-error) !important;
+}
+
+.fv-message-label {
+	display: none;
+	justify-content: flex-start;
+	align-items: center;
+	margin: 2px 0;
+	padding: 2px 5px;
+	font-size: 12px;
+	font-style: italic;
+	border-radius: 3px;
+}
+.fv-message-label.success {
+	display: flex;
+	color: white;
+	background-color: var(--fv-background-success);
+}
+.fv-message-label.warning {
+	display: flex;
+	color: black;
+	background-color: var(--fv-background-warning);
+}
+.fv-message-label.error {
+	display: flex;
+	color: white;
+	background-color: var(--fv-background-error);
+}

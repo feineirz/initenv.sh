@@ -1,7 +1,8 @@
 /*
 Form element attribute references
+	class="validation-submit-entry" \\ Element to be disable if validation failed (eg. submit button)
 	data-validation-rule="<rulename>" \\ Name to references in the validationRules file.
-	data-validation-api-token="<apiToken>" \\ Token to passing to the API from headers.Authorization
+	data-validation-api-token="<api token>" \\ Token to passing to the API from headers.Authorization
 	data-validation-is-exist-endpoint="<api endpoint url>" \\ API endpoint url to check data is exists
 	data-validation-is-exist-self-id="<self objectId>" \\ Id to ignore when check the data is exists in update mode
 
@@ -96,11 +97,11 @@ const validateRule = async function (target, validationSubmitEntries) {
 		if (target.maxLength >= 0) vr.maxLength = target.maxLength;
 	}
 
-	let messageLabel = target.parentNode.querySelector('.message-label');
+	let messageLabel = target.parentNode.querySelector('.fv-message-label');
 
 	if (!messageLabel) {
 		messageLabel = document.createElement('p');
-		messageLabel.classList.add('message-label');
+		messageLabel.classList.add('fv-message-label');
 		target.parentNode.insertAdjacentElement('beforeend', messageLabel);
 	}
 
@@ -389,6 +390,8 @@ const assignRules = function () {
 			const validationSubmitEntries = form.querySelectorAll(
 				'.validation-submit-entry'
 			);
+			validationSubmitEntries.forEach(entry => entry.setAttribute('disabled', ''));
+
 			const inputs = form.querySelectorAll('input');
 			if (inputs) {
 				inputs.forEach(input => {

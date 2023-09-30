@@ -1,0 +1,30 @@
+.fm-container {
+	--fm-background-success: #00ee00;
+	--fm-background-warning: #eeee00;
+	--fm-background-error: #ee0000;
+
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	width: 100%;
+	height: fit-content;
+	padding: 0.5em;
+}
+.fm-container.success {
+	color: white;
+	background-color: var(--fm-background-success);
+}
+.fm-container.warning {
+	color: black;
+	background-color: var(--fm-background-warning);
+}
+.fm-container.error {
+	color: white;
+	background-color: var(--fm-background-error);
+}
+.fm-container .message {
+	margin: 0;
+	font-size: 12px;
+	font-style: italic;
+}

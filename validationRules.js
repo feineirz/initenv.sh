@@ -10,11 +10,11 @@ allowCharacterSet references
 	custom: 'Any character specified here'
 
 textTransform references
-	upper: Turn all text to uppercase
-	lower: Turn all text to lowercase
-	wordCapitalize: Uppercase first letter of each word and ignore the left
+	upper: Turns all text to uppercase
+	lower: Turns all text to lowercase
+	wordCapitalize: Uppercase first letter of each word but ignore the left
 	wordCapitalize-force: Uppercase first letter of each word and turns the left to lowercase
-	SentenceCapitalize: Uppercase first letter of the sentence and ignore the left
+	SentenceCapitalize: Uppercase first letter of the sentence but ignore the left
 	SentenceCapitalize-force: Uppercase first letter of the sentence and turns the left to lowercase
 
 rules = {
