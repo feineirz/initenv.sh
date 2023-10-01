@@ -2,6 +2,7 @@
 Form element attribute references
 	class="validation-submit-entry" \\ Element to be disable if validation failed (eg. submit button)
 	data-validation-rule="<rulename>" \\ Name to references in the validationRules file.
+	data-validation-matching="<element name>" \\ Element name to test if the value matches. (eg. to test password and confirm password)
 	data-validation-api-token="<api token>" \\ Token to passing to the API from headers.Authorization
 	data-validation-is-exist-endpoint="<api endpoint url>" \\ API endpoint url to check data is exists
 	data-validation-is-exist-self-id="<self objectId>" \\ Id to ignore when check the data is exists in update mode
@@ -9,10 +10,20 @@ Form element attribute references
 IsExists validation API guide
 	...
 	const data = await model.find()
-	return res.status(200).json({
-		success: true,
-		data: data
-	})
+	if (data[0]) {
+		// data is exists, Form-Validator raise an error
+		return res.status(200).json({
+			success: true,
+			data: data
+		})
+	} else {
+		// data is not exists, Form-Validator do nothing
+		return res.status(404).json({
+			success: false,
+			data: []
+		})		
+	}
+
 */
 
 import { rules } from './validationRules.js';
@@ -28,14 +39,6 @@ characterSet.all =
 	characterSet.lowercases +
 	characterSet.digits +
 	characterSet.symbols;
-
-const emailFormat = new RegExp(
-	"([!#-'*+/-9=?A-Z^-~-]+(.[!#-'*+/-9=?A-Z^-~-]+)*|\"([]!#-[^-~ \t]|(\\[\t -~]))+\")@([!#-'*+/-9=?A-Z^-~-]+(.[!#-'*+/-9=?A-Z^-~-]+)*|[[\t -Z^-~]*])"
-);
-
-const urlFormat = new RegExp(
-	'(https?://(?:www.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9].[^s]{2,}|www.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9].[^s]{2,}|https?://(?:www.|(?!www))[a-zA-Z0-9]+.[^s]{2,}|www.[a-zA-Z0-9]+.[^s]{2,})'
-);
 
 const WordCapitalize = function (content, force = false) {
 	let words = [];
@@ -242,19 +245,6 @@ const validateRule = async function (target, validationSubmitEntries) {
 		}
 	}
 
-	// Validate Email type
-	if (!foundError) {
-		if (target.type === 'email') {
-			if (!emailFormat.test(target.value)) {
-				target.classList.add('error');
-				messageLabel.classList.add('error');
-				messageLabel.innerText = `Invalid Email format!`;
-				foundError = true;
-				return;
-			}
-		}
-	}
-
 	if (!foundError) {
 		if (target.type === 'url') {
 			// Try to re-format
@@ -263,13 +253,6 @@ const validateRule = async function (target, validationSubmitEntries) {
 			}
 			if (!target.value.startsWith('http')) {
 				target.value = `http://www.${target.value}`;
-			}
-			if (!urlFormat.test(target.value)) {
-				target.classList.add('error');
-				messageLabel.classList.add('error');
-				messageLabel.innerText = `Invalid URL format!`;
-				foundError = true;
-				return;
 			}
 		}
 	}
@@ -331,7 +314,10 @@ const validateRule = async function (target, validationSubmitEntries) {
 			);
 			if (matchingElement) {
 				if (target.value && matchingElement.value) {
+					let matchingElementMessageLabel =
+						matchingElement.parentNode.querySelector('.fv-message-label');
 					if (target.value != matchingElement.value) {
+						matchingElement.classList.add('error');
 						target.classList.add('error');
 						messageLabel.classList.add('error');
 						messageLabel.innerText = `${WordCapitalize(
@@ -339,6 +325,14 @@ const validateRule = async function (target, validationSubmitEntries) {
 						)} and ${WordCapitalize(matchingElement.name)} not match!`;
 						foundError = true;
 						return;
+					} else {
+						matchingElement.classList.remove('error', 'warning');
+						matchingElement.classList.add('success');
+						target.classList.remove('error');
+						if (matchingElementMessageLabel) {
+							matchingElementMessageLabel.classList.remove('error');
+							matchingElementMessageLabel.innerText = '';
+						}
 					}
 				}
 			}
@@ -397,6 +391,9 @@ const assignRules = function () {
 				inputs.forEach(input => {
 					let rule = input.dataset?.validationRule ?? undefined;
 					if (rule) {
+						if (rules[rule].required) {
+							input.setAttribute('Required', '');
+						}
 						input.validationRule = rules[rule];
 						input.addEventListener('blur', e => {
 							validateRule(input, validationSubmitEntries);
@@ -423,6 +420,9 @@ const assignRules = function () {
 				textareas.forEach(textarea => {
 					let rule = textarea.dataset?.validationRule ?? undefined;
 					if (rule) {
+						if (rules[rule].required) {
+							textareas.setAttribute('Required', '');
+						}
 						textarea.validationRule = rules[rule];
 						textarea.addEventListener('blur', e => {
 							validateRule(textarea, validationSubmitEntries);

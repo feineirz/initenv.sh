@@ -403,7 +403,7 @@ app.use(flash())\n\
 		" app.js
 
 		cd public/css
-		wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/connect-flash.css
+		wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/connect-flash.css
 		cd ../..
 	fi
 fi
@@ -420,70 +420,12 @@ if [ $useMulter ] ; then
 	touch public/uploads/files/.gitkeep
 	touch public/uploads/images/.gitkeep
 
-	cat > middlewares/fileUploader.js << EOF
-const path = require('path')
 
-const multer = require('multer')
-
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        // Rename original file
-        // file.originalname = file.fieldname + path.extname(file.originalname)
-
-        // Filtering path to save
-        if (file.fieldname === 'file' || file.fieldname === 'files') {
-            cb(null, 'public/uploads/files')
-        } else {
-            cb(null, 'public/uploads')
-        }
-    },
-    filename: (req, file, cb) => {
-        cb(null, `file-\${Date.now()}\${path.extname(file.originalname)}`)
-    },
-})
-
-module.exports = multer({
-    storage: storage,
-    fileSize: 25 * 1024 * 1024,
-})
-EOF
-
-	cat > middlewares/imageUploader.js << EOF
-const path = require('path')
-
-const multer = require('multer')
-const sharpMulter = require('sharp-multer')
-
-const storage = sharpMulter({
-    destination: (req, file, cb) => {
-        // Rename original file
-        // file.originalname = file.fieldname + path.extname(file.originalname)
-
-        // Filtering path to save
-        if (file.fieldname === 'image' || file.fieldname === 'images') {
-            cb(null, 'public/uploads/images')
-        } else {
-            cb(null, 'public/uploads')
-        }
-    },
-    imageOptions: {
-        useTimestamp: true,
-        fileFormat: 'jpg',
-        quality: 90,
-        resize: {
-            width: 1000,
-            height: 1000,
-            resizeMode: 'cover',
-        },
-    },
-})
-
-module.exports = multer({
-    storage: storage,
-    fileSize: 5 * 1024 * 1024,
-})
-EOF
-
+	# Multer middleware files
+	cd middlewares
+	wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/fileUploader.js
+	wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/imageUploader.js
+	cd ..
 fi
 
 # place app at last of init phase
@@ -652,7 +594,7 @@ if [ $createHomepage = "y" ] ; then
 
 	# favicon
 	cd public/images
-	wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/favicon.png
+	wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/favicon.png
 	cd ../..
 
 	# CSS
@@ -699,26 +641,6 @@ EOF
 		echo ""
 		read -p "Use client-side form validation? (y/n): " useFormValidation
 
-	# Form validation
-		if [ useFormValidation ] ; then
-			cd public/js
-			wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/formValidator.js
-			wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/validationRules.js
-			cd ../..
-
-			cd public/css			
-			wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/form-validator.css
-			cd ../..
-
-			sed -i "/<%- include('.\/partials\/joint.ejs') %>/i \
-		<link rel=\"stylesheet\" href=\"css/form-validator.css\">
-			" views/index.ejs
-
-			sed -i "/<%- include('.\/partials\/footer.ejs') %>/i \
-		<script type=\"module\" src=\"js\/formValidator.js\"><\/script>
-			" views/index.ejs
-		fi
-
 		cat > controllers/homeController.js << EOF
 exports.getHome = (req, res) => {
     res.render('index', {
@@ -751,6 +673,85 @@ EOF
 				</div>\
 			</div>\
 		' views/index.ejs
+
+	# Form validation
+		if [ useFormValidation ] ; then
+			cd public/js
+			wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/formValidator.js
+			wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/validationRules.js
+			cd ../..
+
+			cd public/css			
+			wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/form-validator.css
+			cd ../..
+
+			formEndpoint=
+			if [ $useConnectFlash == "y" ]; then
+				$formEndpoint=flashswal
+			fi
+
+			sed -i '/<\!-- form-validation here -->/a \					
+					<form class="fv" action="\/$formEndpoint" method="post">
+						<div class="title"><h3>Test Form-Validator<\/h3><\/div>
+						<hr>
+						<p><i>Please fill the form to test if Form-Validator works.<\/i><\/p>
+						<div class="form-floating mb-3">
+							<input 
+								type="text" 
+								class="form-control" 
+								name="username"
+								id="username" 
+								data-validation-rule="example">
+							<label for="username">Username<\/label>
+						<\/div>
+
+						<div class="form-floating mb-3">
+							<input 
+								type="password" 
+								class="form-control" 
+								name="password"
+								id="password" 
+								data-validation-rule="example"
+								data-validation-matching="confirm_password">
+							<label for="password">Password<\/label>
+						<\/div>
+
+						<div class="form-floating mb-3">
+							<input 
+								type="password" 
+								class="form-control" 
+								name="confirm_password"
+								id="confirm_password" 
+								data-validation-rule="example"
+								data-validation-matching="password">
+							<label for="confirm_password">Confirm Password<\/label>
+						<\/div>
+
+						<div class="form-floating mb-3">
+							<input 
+								type="email" 
+								class="form-control" 
+								name="email"
+								id="email" 
+								data-validation-rule="example">
+							<label for="email">Email<\/label>
+						<\/div>
+
+						<div class="button-group">
+							<button class="btn btn-primary validation-submit-entry" type="submit">Send<\/button>
+						<\/div>
+					<\/form>
+			' views/index.ejs
+
+			sed -i "/<%- include('.\/partials\/joint.ejs') %>/i \
+		<link rel=\"stylesheet\" href=\"css/form-validator.css\">
+			" views/index.ejs
+
+			sed -i "/<%- include('.\/partials\/footer.ejs') %>/i \
+		<script type=\"module\" src=\"js\/formValidator.js\"><\/script>
+			" views/index.ejs
+		fi
+
 	else
 		cat > controllers/homeController.js << EOF
 exports.getHome = (req, res) => {

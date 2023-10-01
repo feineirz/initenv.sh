@@ -32,7 +32,7 @@ rules = {
 */
 
 export const rules = {
-	sampleUsername: {
+	example: {
 		minLength: 8,
 		maxLength: 24,
 		allowSpaces: false,
