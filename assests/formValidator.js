@@ -42,6 +42,7 @@ characterSet.all =
 
 const WordCapitalize = function (content, force = false) {
 	let words = [];
+
 	words = content.split(/\_|\ |\r?\n|\r|\n/); // /\-|\_|\ |\r?\n|\r|\n/
 	words = force
 		? words.map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
@@ -51,11 +52,10 @@ const WordCapitalize = function (content, force = false) {
 
 	// Capitalize after ()
 	words = words.split(/\(/); // /\-|\_|\ |\r?\n|\r|\n/
-	words = force
-		? words.map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-		: words.map(word => word.charAt(0).toUpperCase() + word.slice(1));
+	words = words.map(word => word.charAt(0).toUpperCase() + word.slice(1));
 	words = words.filter(word => word.trim() != '');
 	words = words.join('(');
+
 	return words;
 };
 
