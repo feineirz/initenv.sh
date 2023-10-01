@@ -546,7 +546,7 @@ EOF
 		" app.js
 
 		sed -i "/<\!-- Internal CSS -->/a \
-		<link rel=\"stylesheet\" href=\"css/connect-flash.css\">
+				<link rel=\"stylesheet\" href=\"css/connect-flash.css\">
 		" views/partials/head.ejs
 
 		cat > public/js/swals.js << EOF
@@ -664,6 +664,7 @@ EOF
 				<div class="welcome-box">\
 					<h1><b>WELCOME HOMEPAGE</b></h1>\
 					<h3><b>Environment initialization successful.</b></h3>\n\
+					<hr>\
 					<!-- form-validation here -->\
 					<hr>\
 					<h5>You are ready to roll</h5>\
@@ -685,70 +686,60 @@ EOF
 			wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/form-validator.css
 			cd ../..
 
-			formEndpoint=
-			if [ $useConnectFlash == "y" ]; then
-				$formEndpoint=flashswal
-			fi
-
-			sed -i '/<\!-- form-validation here -->/a \					
-					<form class="fv" action="\/$formEndpoint" method="post">
-						<div class="title"><h3>Test Form-Validator<\/h3><\/div>
-						<hr>
-						<p><i>Please fill the form to test if Form-Validator works.<\/i><\/p>
-						<div class="form-floating mb-3">
-							<input 
-								type="text" 
-								class="form-control" 
-								name="username"
-								id="username" 
-								data-validation-rule="example">
-							<label for="username">Username<\/label>
-						<\/div>
-
-						<div class="form-floating mb-3">
-							<input 
-								type="password" 
-								class="form-control" 
-								name="password"
-								id="password" 
-								data-validation-rule="example"
-								data-validation-matching="confirm_password">
-							<label for="password">Password<\/label>
-						<\/div>
-
-						<div class="form-floating mb-3">
-							<input 
-								type="password" 
-								class="form-control" 
-								name="confirm_password"
-								id="confirm_password" 
-								data-validation-rule="example"
-								data-validation-matching="password">
-							<label for="confirm_password">Confirm Password<\/label>
-						<\/div>
-
-						<div class="form-floating mb-3">
-							<input 
-								type="email" 
-								class="form-control" 
-								name="email"
-								id="email" 
-								data-validation-rule="example">
-							<label for="email">Email<\/label>
-						<\/div>
-
-						<div class="button-group">
-							<button class="btn btn-primary validation-submit-entry" type="submit">Send<\/button>
-						<\/div>
-					<\/form>
+			sed -i '/<\!-- form-validation here -->/a \
+					<form class="fv" action="\/flashswal" method="post">\
+						<div class="title"><h3>Test Form-Validator<\/h3><\/div>\
+						<hr>\
+						<p><i>Please fill the form to test if Form-Validator works.<\/i><\/p>\
+						<div class="form-floating mb-3">\
+							<input \
+								type="text" \
+								class="form-control" \
+								name="username" \
+								id="username" \
+								data-validation-rule="example"> \
+							<label for="username">Username<\/label>\
+						<\/div>\n\
+						<div class="form-floating mb-3">\
+							<input \
+								type="password" \
+								class="form-control" \
+								name="password" \
+								id="password" \
+								data-validation-rule="example" \
+								data-validation-matching="confirm_password"> \
+							<label for="password">Password<\/label>\
+						<\/div>\n\
+						<div class="form-floating mb-3">\
+							<input \
+								type="password" \
+								class="form-control" \
+								name="confirm_password" \
+								id="confirm_password" \
+								data-validation-rule="example" \
+								data-validation-matching="password"> \
+							<label for="confirm_password">Confirm Password<\/label>\
+						<\/div>\n\
+						<div class="form-floating mb-3">\
+							<input \
+								type="email" \
+								class="form-control" \
+								name="email" \
+								id="email"> \
+							<label for="email">Email<\/label> \
+						<\/div>\n\
+						<div class="button-group">\
+							<button class="btn btn-primary validation-submit-entry" type="submit">Send<\/button>\
+						<\/div>\
+					<\/form>\
 			' views/index.ejs
 
 			sed -i "/<%- include('.\/partials\/joint.ejs') %>/i \
-		<link rel=\"stylesheet\" href=\"css/form-validator.css\">
+		<link rel=\"stylesheet\" href=\"css/form-validator.css\">\
 			" views/index.ejs
 
 			sed -i "/<%- include('.\/partials\/footer.ejs') %>/i \
-		<script type=\"module\" src=\"js\/formValidator.js\"><\/script>
+		<script type=\"module\" src=\"js/formValidator.js\"></script>\
 			" views/index.ejs
 		fi
 
@@ -804,7 +795,7 @@ const routes = require('express').Router()
 const homeController = require('../controllers/homeController')
 
 routes.get('/', homeController.getHome)
-routes.get('/flashswal', homeController.getHomeSwal)
+routes.use('/flashswal', homeController.getHomeSwal)
 
 module.exports = routes
 EOF
@@ -825,9 +816,9 @@ echo ""
 npm init
 
 sed -i '/"scripts": {/a \
-		"dev": "nodemon app.js",\
-		"start": "node app.js",
-	' package.json
+	"dev": "nodemon app.js",\
+	"start": "node app.js",
+' package.json
 
 git init
 git add *
