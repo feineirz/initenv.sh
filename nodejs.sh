@@ -527,7 +527,7 @@ EOF
 		# EJS & Form Validator
 		if [ $useEJS = "y" ] ; then
 			echo ""
-			read -p "Use client-side form validation? (y/n): " useFormValidation
+			read -p "Use client-side Form Validator? (y/n): " useFormValidator
 
 			cat > controllers/homeController.js << EOF
 exports.getHome=(req, res) => {
@@ -563,7 +563,7 @@ EOF
 			</div>' views/index.ejs
 
 		# Form validation
-			if [ useFormValidation ] ; then
+			if [ useFormValidator ] ; then
 				cd public/js
 				wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/formValidator.js
 				wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/validationRules.js
@@ -681,7 +681,7 @@ const homeController=require('../controllers/homeController')
 routes.get('/', homeController.getHome)
 routes.use('/flashswal', homeController.getHomeSwal)
 
-module.exports=routes
+module.exports = routes
 EOF
 		sed -i "/\/\/ Routes/a \
 const homeRoutes=require('./routes/homeRoutes')\n\n\
