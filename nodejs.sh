@@ -1,32 +1,41 @@
 #! /bin/bash
 
-clear
-echo "===== NODEJS-EXPRESS ENVIRONMENT INITAILIZE SCRIPT ====="
-# Local GIT repository
-echo ""
-echo ">> Initialize local Git repository..."
-read -p "Repository name: " repoName
-read -p "Branch name (main, master or anything): " branchName
 
-mkdir $repoName
-cd $repoName
-echo "# "$repoName >> README.md
-echo "# "$repoName" LICENSE" >> LICENSE.md
+########################## Functions ##########################
+# Welcome screen
+welcome() {
+	clear
+	echo "===== NODEJS-EXPRESS ENVIRONMENT INITAILIZE SCRIPT ====="
+}
 
-# .gitignore
-wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/.gitignore
+# Initialize local GIT repository
+initLocalGit() {
+	echo ""
+	echo "== Initialize local Git repository =="
+	read -p "Repository name: " repoName
+	read -p "Branch name (main, master or anything): " branchName
 
-# Prettier
-echo ""
-read -p "Use prettier? (y/n): " usePrettier
-if [ $usePrettier="y" ] ; then
-	echo "Installing prettier"
+	mkdir $repoName
+	cd $repoName
+	echo "# "$repoName >> README.md
+	echo "# "$repoName" LICENSE" >> LICENSE.md
 
-	npm i --save-dev prettier
+	# .gitignore
+	wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/.gitignore	
+}
 
-	touch .prettierrc .prettierignore
+# Initialize Prettier
+initPrettier() {
+	echo ""
+	read -p "Use prettier? (y/n): " usePrettier
+	if [ $usePrettier = "y" ] ; then
+		echo "Installing prettier"
 
-	cat > .prettierrc << EOF
+		npm i --save-dev prettier
+
+		touch .prettierrc .prettierignore
+
+		cat > .prettierrc << EOF
 {
 	"trailingComma": "es5",
 	"semi": false,
@@ -37,7 +46,7 @@ if [ $usePrettier="y" ] ; then
 }
 EOF
 
-	cat > .prettierignore << EOF
+		cat > .prettierignore << EOF
 # Ignore artifacts:
 build
 coverage
@@ -50,20 +59,22 @@ coverage
 **/.hg
 **/node_modules
 EOF
-fi
+	fi	
+}
 
-echo ""
-echo ">> Generating NodeJS environment..."
+# Create directory and file structure
+initProjectStructure() {
+	echo ""
+	echo "== Generating NodeJS project structure =="
 
-# Create directories and files structure
-touch app.js
-	cat > app.js << EOF
+	touch app.js
+		cat > app.js << EOF
 // Initialize
 require('dotenv').config()
-const path=require('path')
-const morgan=require('morgan')
+const path = require('path')
+const morgan = require('morgan')
 
-const express=require('express')
+const express = require('express')
 // End Initialize
 
 
@@ -83,15 +94,14 @@ app.use(morgan('dev'))
 // End Middlewares
 
 
-
 // Access-Control
 app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Credentials', true)
-    res.header('Access-Control-Allow-Origin', '*')
-    res.header('Access-Control-Allow-Methods', 'POST, GET, PUT, PATCH, DELETE')
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization')
+	res.header('Access-Control-Allow-Credentials', true)
+	res.header('Access-Control-Allow-Origin', '*')
+	res.header('Access-Control-Allow-Methods', 'POST, GET, PUT, PATCH, DELETE')
+	res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization')
 
-    next()
+	next()
 })
 
 // Response local variables
@@ -112,70 +122,84 @@ app.use((req, res, next) => {
 // Connect database and running the server
 // End Connect database and running the server
 
-
 EOF
 
-touch .env
+	touch .env
 
-mkdir models views controllers routes apis auths middlewares utils config public
-mkdir public/images public/css public/js public/uploads routes/api
+	mkdir models views controllers routes apis auths middlewares utils config public
+	mkdir public/images public/css public/js public/uploads routes/api
 
-cd config
-touch database.js server.js
-cd ..
+	cd config
+	touch database.js server.js
+	cd ..
 
-cd public/css
-touch main.css container.css nav.css form.css text.css colors.css decore.css
-cd ../..
+	cd public/css
+	touch main.css container.css nav.css form.css text.css colors.css decore.css
+	cd ../..
 
-# Install NodeJS packages
-echo ""
-echo ">> Installing node packages..."
-echo "Installing dotenv bcryptjs @types/node randomstring nodemon morgan"
-npm i --save dotenv bcryptjs @types/node randomstring
-npm i --save-dev nodemon morgan
-echo ""
-echo "Main stack"
-echo "1. express mongoose"
-echo "2. express mysql2"
-read -p "Select stack: " mainStackId
+}
 
-# Session
-echo ""
-read -p "Use session? (y/n): " useSession
+# Installing common packages
+installCommon() {
+	echo ""
+	echo "== Installing common packages =="
+	echo "Installing dotenv bcryptjs @types/node randomstring nodemon morgan"
+	npm i --save dotenv bcryptjs @types/node randomstring
+	npm i --save-dev nodemon morgan
+}
 
-# Express
-echo "Installing express"
-npm i --save express
+# Installing Express
+installExpress() {
+	echo "Installing express"
+	npm i --save express
+}
 
-# Mongoose or MySQl2
-if [ $mainStackId="1" ] ; then
+# Pick Main Stack
+pickMainStack() {
+	echo ""
+	echo "== Pickup Main Stack =="
+	echo "1. express mongoose"
+	echo "2. express mysql2"
+	read -p "Select stack: " mainStackId
+}
+
+# Initialize Session
+initSession() {
+	echo ""
+	read -p "Use session? (y/n): " useSession
+	if [ $useSession = "y" ] ; then
+		echo "Installing express-session"
+		npm i --save express-session
+	fi
+
+}
+
+# Initialize MongoDB stack
+initMongoDBStack() {
 	cat > .env << EOF
-MONGODB_URI='mongodb://127.0.0.1:27017/$repoName'
+MONGODB_URI = 'mongodb://127.0.0.1:27017/$repoName'
 
 EOF
 	
 	echo "Installing mongoose"
 	npm i --save mongoose
 	sed -i "/\/\/ End Initialize/i \
-const mongoose=require('mongoose')\n\
-	" app.js
+const mongoose = require('mongoose')" app.js
 	
-	if [ $useSession="y" ] ; then
-		echo "Installing express-session connect-mongodb-session"
-		npm i --save express-session connect-mongodb-session
+	if [ $useSession = "y" ] ; then
+		echo "Installing connect-mongodb-session"
+		npm i --save connect-mongodb-session
 		sed -i "/\/\/ End Initialize/i \
-const session=require('express-session')\n\
-const MongoDBStore=require('connect-mongodb-session')(session)\n\n\
-const store=new MongoDBStore({\n\
+const session = require('express-session')\n\
+const MongoDBStore = require('connect-mongodb-session')(session)\n\n\
+const store = new MongoDBStore({\n\
 	uri: process.env.MONGODB_URI,\n\
 	collection: 'sessions'\n\
 })\n\
 store.on('error', error => {\n\
 	console.log(error)\n\
 	process.exit(1)\n\
-})\n\
-	" app.js
+})" app.js
 	
 		sed -i "/\/\/ Middlewares/a \
 app.use(session({\n\
@@ -186,12 +210,11 @@ app.use(session({\n\
 	store: store,\n\
 	resave: true,\n\
 	saveUninitialized: true\n\
-}))\n\
-		" app.js
+}))" app.js
 	fi
 	
 	sed -i "/\/\/ Connect database and running the server/a \
-const serverPort=process.env.PORT || 3000\n\
+const serverPort = process.env.PORT || 3000\n\
 mongoose\n\
 	.connect(process.env.MONGODB_URI)\n\
     .then(result => {\n\
@@ -203,9 +226,11 @@ mongoose\n\
     .catch(err => {\n\
 		console.log('Error occurred while starting the server\!\!\!')\n\
 		process.exit(3)\n\
-    })\n\
-		" app.js
-elif [ $mainStackId="2" ] ; then
+    })" app.js
+}
+
+# Initialize MySQL stack
+initMysqlStack() {
 	cat > .env << EOF
 MYSQL_HOST='127.0.0.1'
 MYSQL_DATABASE='$repoName'
@@ -217,7 +242,7 @@ EOF
 	npm i --save mysql2
 	
 	cat > config/database.js << EOF
-const mysql=require('mysql2')
+const mysql = require('mysql2')
 exports.connectionPool=mysql.createPool({
 	host: process.env.MYSQL_HOST,
 	database: process.env.MYSQL_DATABASE,
@@ -226,12 +251,9 @@ exports.connectionPool=mysql.createPool({
 }).promise()
 EOF
 	
-	if [ $useSession="y" ] ; then
-		echo "Installing express-session"
-		npm i --save express-session
+	if [ $useSession = "y" ] ; then
 		sed -i "/\/\/ End Initialize/i \
-const session=require('express-session')\n\
-	" app.js
+const session = require('express-session')" app.js
 	
 	sed -i "/\/\/ Middlewares/a \
 app.use(session({\n\
@@ -241,84 +263,87 @@ app.use(session({\n\
 	},\n\
 	resave: true,\n\
 	saveUninitialized: true\n\
-}))\n\
-		" app.js	
+}))" app.js	
 	
 		sed -i "/\/\/ Connect database and running the server/a \
-const serverPort=process.env.PORT || 3000\n\
+const serverPort = process.env.PORT || 3000\n\
 app.listen(serverPort, result => {\n\
   console.log(\`Listening on port \${serverPort}...\`)\n\
-})\n\
-		" app.js
+})" app.js
 	fi
-fi
+}
 
-# Flash message
-if [ $useSession="y" ] ; then
-	echo ""
-	read -p "Use Connect Flash? (y/n): " useConnectFlash
-	if [ $useConnectFlash="y" ] ; then
-		echo "Installing connect-flash"
-		npm i --save connect-flash
-		sed -i "/\/\/ End Initialize/i \
-const flash=require('connect-flash')\n\
-		" app.js
-
-		sed -i "/\/\/ End Middlewares/i \
-app.use(flash())\n\
-		" app.js
-
-		cd public/css
-		wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/connect-flash.css
-		cd ../..
+# INitialize Main stack
+initMainStack() {
+	if [ $mainStackId = "1" ] ; then
+		initMongoDBStack
+	elif [ $mainStackId = "2" ] ; then
+		initMysqlStack
 	fi
-fi
+}
+
+# Initialize Connect-Flash + SweetAlert2
+initFlashSwal() {
+	if [ $useSession = "y" ] ; then
+		echo ""
+		read -p "Use Connect Flash and SweetAlert2? (y/n): " useFlashSwal
+		if [ $useFlashSwal = "y" ] ; then
+			echo "Installing connect-flash"
+			npm i --save connect-flash
+			sed -i "/\/\/ End Initialize/i \
+const flash = require('connect-flash')" app.js
+
+			sed -i "/\/\/ End Middlewares/i \
+app.use(flash())" app.js
+
+			cd public/css
+			wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/connect-flash.css
+			cd ../..
+		fi
+	fi	
+}
 
 # Multer and Sharp-Multer
-echo ""
-read -p "Use Multer and Sharp-Multer? (y/n): " useMulter
-if [ $useMulter ] ; then
-	echo "Installing multer sharp-multer"
-	npm i --save multer sharp-multer
+initMulter() {
+	echo ""
+	read -p "Use Multer and Sharp-Multer? (y/n): " useMulter
+	if [ $useMulter ] ; then
+		echo "Installing multer sharp-multer"
+		npm i --save multer sharp-multer
 
-	mkdir public/uploads/files
-	mkdir public/uploads/images
-	touch public/uploads/files/.gitkeep
-	touch public/uploads/images/.gitkeep
+		mkdir public/uploads/files
+		mkdir public/uploads/images
+		touch public/uploads/files/.gitkeep
+		touch public/uploads/images/.gitkeep
 
 
-	# Multer middleware files
-	cd middlewares
-	wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/fileUploader.js
-	wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/imageUploader.js
-	cd ..
-fi
+		# Multer middleware files
+		cd middlewares
+		wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/fileUploader.js
+		wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/imageUploader.js
+		cd ..
+	fi	
+}
 
-# place app at last of init phase
-sed -i "/\/\/ End Initialize/i \
-const app=express()\n\
-	" app.js
+# Initialize EJS
+initEJS() {
+	echo ""
+	read -p "Use EJS view engine? (y/n): " useEJS
+	if [ $useEJS = "y" ] ; then
+		echo "Installing ejs"
+		npm i --save ejs
 
-# EJS
-echo ""
-read -p "Use EJS view engine? (y/n): " useEJS
-if [ $useEJS="y" ] ; then
-	echo "Installing ejs"
-	npm i --save ejs
+		sed -i "/app.set('views', 'views')/a \
+app.set('view engine', 'ejs')" app.js
 
-	sed -i "/app.set('views', 'views')/a \
-app.set('view engine', 'ejs')\
-	" app.js
+		sed -i "/\/\/ Response local variable list/a \
+		res.locals.pageTitle = '$repoName'" app.js
 
-	sed -i "/\/\/ Response local variable list/a \
-		res.locals.pageTitle='$repoName'\
-	" app.js
+		mkdir views/partials
+		cd views/partials
+		touch head.ejs joint.ejs footer.ejs nav.ejs
 
-	mkdir views/partials
-	cd views/partials
-	touch head.ejs joint.ejs footer.ejs nav.ejs
-
-	cat > head.ejs << EOF
+		cat > head.ejs << EOF
 <!DOCTYPE html>
 <html lang="en">
 	<head>
@@ -344,14 +369,13 @@ app.set('view engine', 'ejs')\
 		
 		<title><%= pageTitle %></title>
 EOF
-	cat > joint.ejs << EOF
-		
+		cat > joint.ejs << EOF			
 	</head>
 	<body>
 EOF
 
-	cat > footer.ejs << EOF
-		
+		cat > footer.ejs << EOF
+			
 		<footer>
 			<!-- Footer content -->
 
@@ -359,13 +383,13 @@ EOF
 
 		<!-- Bootstrap 5.2 -->
 		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
-  	</body>
+	</body>
 </html>
 EOF
 
-# Connect-Flash EJS
-	if [ $useConnectFlash="y" ] ; then
-		cat > connect-flash-swal.ejs << EOF
+	# Connect-Flash EJS
+		if [ $useFlashSwal = "y" ] ; then
+			cat > connect-flash-swal.ejs << EOF
 <!-- Passing to SweetAlert2 -->
 <% if (flashSwal[0]) { %>
 <input type="hidden" name="swalType" id="swalType" value="<%= flashSwal[0].type %>">
@@ -375,11 +399,11 @@ EOF
 <input type="hidden" name="swalFooter" id="swalFooter" value="<%= flashSwal[0].footer %>">	
 <% } %>
 EOF
-	fi
+		fi
 
-	cd ../
+		cd ../
 
-	cat > index.ejs << EOF
+		cat > index.ejs << EOF
 <%- include('./partials/head.ejs') %>
 <!-- Extra head contents (eg. meta, link, style, or script) -->
 
@@ -398,87 +422,85 @@ EOF
 <%- include('./partials/footer.ejs') %>
 EOF
 
-	if [ $useConnectFlash="y" ] ; then
-		sed -i "/<\/header>/a \
-<%- include('./partials/connect-flash-swal.ejs') %>\n\
-		" index.ejs
-	fi
+		if [ $useFlashSwal = "y" ] ; then
+			sed -i "/<\/header>/a \
+<%- include('./partials/connect-flash-swal.ejs') %>" index.ejs
+		fi
 
-	cd ../
+		cd ../
 
-	if [ $useConnectFlash="y" ] ; then
-		sed -i "/\/\/ End Response local variable list/i \
-			res.locals.flashSwal=req.flash('flashSwal')\n\
-		" app.js
+		if [ $useFlashSwal = "y" ] ; then
+			sed -i "/\/\/ End Response local variable list/i \
+		res.locals.flashSwal = req.flash('flashSwal')" app.js
 
-		sed -i "/<\!-- Internal CSS -->/a \
-				<link rel=\"stylesheet\" href=\"css/connect-flash.css\">
-		" views/partials/head.ejs
+			sed -i "/<\!-- Internal CSS -->/a \
+	<link rel=\"stylesheet\" href=\"css/connect-flash.css\">" views/partials/head.ejs
 
-		cat > public/js/swals.js << EOF
+			cat > public/js/swals.js << EOF
 function flashSwal() {
-    try {
-        const swalType=document.querySelector('input#swalType').value
-        const swalTitle=document.querySelector('input#swalTitle').value
-        const swalMessage=document.querySelector('input#swalMessage').value
-        const swalDetails=document.querySelector('input#swalDetails').value
-        const swalFooter=document.querySelector('input#swalFooter').value
-        swal.fire({
-            icon: swalType,
-            title: swalTitle,
-            html: swalDetails ? swalMessage + '<hr/><i>' + swalDetails + '</i>' : swalMessage,
-            footer: swalFooter,
-            timer: 30000,
-            timerProgressBar: true,
-        })
-    } catch (error) {
-        // pass
-    }
+	try {
+		const swalType=document.querySelector('input#swalType').value
+		const swalTitle=document.querySelector('input#swalTitle').value
+		const swalMessage=document.querySelector('input#swalMessage').value
+		const swalDetails=document.querySelector('input#swalDetails').value
+		const swalFooter=document.querySelector('input#swalFooter').value
+		swal.fire({
+			icon: swalType,
+			title: swalTitle,
+			html: swalDetails ? swalMessage + '<hr/><i>' + swalDetails + '</i>' : swalMessage,
+			footer: swalFooter,
+			timer: 30000,
+			timerProgressBar: true,
+		})
+	} catch (error) {
+		// pass
+	}
 }
 EOF
 
-		sed -i '/<\/head>/i \
-				<script src="/js/swals.js"></script>\n\
-' views/partials/joint.ejs
+			sed -i '/<\/head>/i \
+		<script src="/js/swals.js"></script>' views/partials/joint.ejs
 
-		sed -i 's/<body>/<body onload="flashSwal()">/g' views/partials/joint.ejs
-	fi
-	
-	cat >> .prettierignore << EOF
+			sed -i 's/<body>/<body onload="flashSwal()">/g' views/partials/joint.ejs
+		fi
+		
+		cat >> .prettierignore << EOF
 
 # EJS files
 *.ejs
 
 EOF
 
-fi
+	fi	
+}
 
 # Welcome Homepage
-echo ""
-read -p "Create welcome homepage? (y/n): " createHomepage
-if [ $createHomepage="y" ] ; then
+initWelcomeHomepage() {
+	echo ""
+	read -p "Create welcome homepage? (y/n): " createHomepage
+	if [ $createHomepage = "y" ] ; then
 
-	# favicon
-	cd public/images
-	wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/favicon.png
-	cd ../..
+		# favicon
+		cd public/images
+		wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/favicon.png
+		cd ../..
 
-	# CSS
-	cat > public/css/main.css << EOF
+		# CSS
+		cat > public/css/main.css << EOF
 @import url('https://fonts.googleapis.com/css2?family=Sofia+Sans&display=swap');
 
 :root {
-    --background-default: #c2e5f08c;
-    --background-success: #0051808c;
-    --background-warning: #ffae008f;
-    --background-error: #e70f0fa4;
+	--background-default: #c2e5f08c;
+	--background-success: #0051808c;
+	--background-warning: #ffae008f;
+	--background-error: #e70f0fa4;
 }
 
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Sofia Sans', sans-serif;
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+	font-family: 'Sofia Sans', sans-serif;
 }
 
 body {
@@ -486,46 +508,46 @@ body {
 
 a,
 a:link {
-    text-decoration: none;
+	text-decoration: none;
 }
 
 .welcome-box {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    margin: 25vh auto;
-    padding: 3em;
-    border: 2px #333 solid;
-    border-radius: 7px;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	margin: 25vh auto;
+	padding: 3em;
+	border: 2px #333 solid;
+	border-radius: 7px;
 }
 
 EOF
 
-	# EJS
-	if [ $useEJS="y" ] ; then
-		echo ""
-		read -p "Use client-side form validation? (y/n): " useFormValidation
+		# EJS & Form Validator
+		if [ $useEJS = "y" ] ; then
+			echo ""
+			read -p "Use client-side form validation? (y/n): " useFormValidation
 
-		cat > controllers/homeController.js << EOF
+			cat > controllers/homeController.js << EOF
 exports.getHome=(req, res) => {
-    res.render('index', {
-        pageTitle: '$repoName - Home',
-    })
+	res.render('index', {
+		pageTitle: '$repoName - Home',
+	})
 }
 
 exports.getHomeSwal=(req, res) => {
 	req.flash('flashSwal', {
-            type: 'success',
-            title: 'Setup Completed',
-            message: 'Connect-Flash-Swal ready',
-            details: 'Connect-Flash and SweetAlert2 setup successful.',
-            footer: '',
-        })
+			type: 'success',
+			title: 'Setup Completed',
+			message: 'Connect-Flash-Swal ready',
+			details: 'Connect-Flash and SweetAlert2 setup successful.',
+			footer: '',
+		})
 		res.redirect('/')
 }
 EOF
-		sed -i '/<\!-- Main content -->/a \
+			sed -i '/<\!-- Main content -->/a \
 			<div class="container">\
 				<div class="welcome-box">\
 					<h1><b>WELCOME HOMEPAGE</b></h1>\
@@ -538,79 +560,75 @@ EOF
 						<i><small>Generated by: feinz (<a href="mailto:feineirz@live.com">feineirz@live.com</a>)</small></i>\
 					</p>\
 				</div>\
-			</div>\
-		' views/index.ejs
+			</div>' views/index.ejs
 
-	# Form validation
-		if [ useFormValidation ] ; then
-			cd public/js
-			wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/formValidator.js
-			wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/validationRules.js
-			cd ../..
+		# Form validation
+			if [ useFormValidation ] ; then
+				cd public/js
+				wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/formValidator.js
+				wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/validationRules.js
+				cd ../..
 
-			cd public/css			
-			wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/form-validator.css
-			cd ../..
+				cd public/css			
+				wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/form-validator.css
+				cd ../..
 
-			sed -i '/<\!-- form-validation here -->/a \
-					<form class="fv" action="\/flashswal" method="post">\
-						<div class="title"><h3>Test Form-Validator<\/h3><\/div>\
-						<hr>\
-						<p><i>Please fill the form to test if Form-Validator works.<\/i><\/p>\
-						<div class="form-floating mb-3">\
-							<input \
-								type="text" \
-								class="form-control" \
-								name="username" \
-								id="username" \
-								data-validation-rule="example"> \
-							<label for="username">Username<\/label>\
-						<\/div>\n\
-						<div class="form-floating mb-3">\
-							<input \
-								type="password" \
-								class="form-control" \
-								name="password" \
-								id="password" \
-								data-validation-rule="example" \
-								data-validation-matching="confirm_password"> \
-							<label for="password">Password<\/label>\
-						<\/div>\n\
-						<div class="form-floating mb-3">\
-							<input \
-								type="password" \
-								class="form-control" \
-								name="confirm_password" \
-								id="confirm_password" \
-								data-validation-rule="example" \
-								data-validation-matching="password"> \
-							<label for="confirm_password">Confirm Password<\/label>\
-						<\/div>\n\
-						<div class="form-floating mb-3">\
-							<input \
-								type="email" \
-								class="form-control" \
-								name="email" \
-								id="email"> \
-							<label for="email">Email<\/label> \
-						<\/div>\n\
-						<div class="button-group">\
-							<button class="btn btn-primary validation-submit-entry" type="submit">Send<\/button>\
-						<\/div>\
-					<\/form>\
-			' views/index.ejs
+				sed -i '/<\!-- form-validation here -->/a \
+		<form class="fv" action="\/flashswal" method="post">\
+			<div class="title"><h3>Test Form-Validator<\/h3><\/div>\
+			<hr>\
+			<p><i>Please fill the form to test if Form-Validator works.<\/i><\/p>\
+			<div class="form-floating mb-3">\
+				<input \
+					type="text" \
+					class="form-control" \
+					name="username" \
+					id="username" \
+					data-validation-rule="example"> \
+				<label for="username">Username<\/label>\
+			<\/div>\n\
+			<div class="form-floating mb-3">\
+				<input \
+					type="password" \
+					class="form-control" \
+					name="password" \
+					id="password" \
+					data-validation-rule="example" \
+					data-validation-matching="confirm_password"> \
+				<label for="password">Password<\/label>\
+			<\/div>\n\
+			<div class="form-floating mb-3">\
+				<input \
+					type="password" \
+					class="form-control" \
+					name="confirm_password" \
+					id="confirm_password" \
+					data-validation-rule="example" \
+					data-validation-matching="password"> \
+				<label for="confirm_password">Confirm Password<\/label>\
+			<\/div>\n\
+			<div class="form-floating mb-3">\
+				<input \
+					type="email" \
+					class="form-control" \
+					name="email" \
+					id="email"> \
+				<label for="email">Email<\/label> \
+			<\/div>\n\
+			<div class="button-group">\
+				<button class="btn btn-primary validation-submit-entry" type="submit">Send<\/button>\
+			<\/div>\
+		<\/form>' views/index.ejs
 
-			sed -i "/<%- include('.\/partials\/joint.ejs') %>/i \
-		<link rel=\"stylesheet\" href=\"css/form-validator.css\">\
-			" views/index.ejs
+				sed -i "/<%- include('.\/partials\/joint.ejs') %>/i \
+		<link rel=\"stylesheet\" href=\"css/form-validator.css\">" views/index.ejs
 
-			sed -i "/<%- include('.\/partials\/footer.ejs') %>/i \
-		<script type=\"module\" src=\"js/formValidator.js\"></script>\
-			" views/index.ejs
-		fi
+				sed -i "/<%- include('.\/partials\/footer.ejs') %>/i \
+		<script type=\"module\" src=\"js/formValidator.js\"></script>" views/index.ejs
+			fi
 
-	else
-		cat > controllers/homeController.js << EOF
+		else
+			cat > controllers/homeController.js << EOF
 exports.getHome=(req, res) => {
 	const html='''
 <!DOCTYPE html>
@@ -648,15 +666,15 @@ exports.getHome=(req, res) => {
 		<!-- For Bootstrap -->
 		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
 
-  	</body>
+	</body>
 </html>
 '''
-    res.send(html)
+	res.send(html)
 }
 EOF
-	fi
-	
-	cat > routes/homeRoutes.js << EOF
+		fi
+		
+		cat > routes/homeRoutes.js << EOF
 const routes=require('express').Router()
 const homeController=require('../controllers/homeController')
 
@@ -665,71 +683,129 @@ routes.use('/flashswal', homeController.getHomeSwal)
 
 module.exports=routes
 EOF
-	sed -i "/\/\/ Routes/a \
+		sed -i "/\/\/ Routes/a \
 const homeRoutes=require('./routes/homeRoutes')\n\n\
-app.use(homeRoutes)\n\
-	" app.js
+app.use(homeRoutes)" app.js
 
-fi
+	fi	
+}
 
-
-# npm init
-echo ""
-echo ">> Initialize application..."
-read -p "Press any key to Initialize application" temp
-echo ""
-
-npm init
-
-sed -i '/"scripts": {/a \
-	"dev": "nodemon app.js",\
-	"start": "node app.js",
-' package.json
-
-git init
-git add *
-git add .gitignore .prettierrc .prettierignore
-git commit -m "first initialize commit"
-git branch -M $branchName
-
-echo ""
-read -p "Use github repository? (y/n): " useGithub
-if [ $useGithub="y" ] ; then
+# Initialize project settings
+initProjectSettings() {
 	echo ""
-	read -p "Github username: " ghUsername
-	read -p "Using HTTPS or SSH? (https/ssh)" ghMethod
-	if [ $ghMethod="https" ] ; then
-		git remote add origin https://github.com/$ghUsername/$repoName.git
-		git push -u origin $branchName
-		git config --global credential.helper store
-	elif [ $ghMethod="ssh" ] ; then
-		git remote add origin git@github.com:$ghUsername/$repoName.git
-		git remote set-url origin git@github.com:$ghUsername/$repoName.git
-		git push -u origin $branchName
-	else
-		echo "Invalid parameter"
-		echo "Skip Github config, you can manually config it later."
+	echo "== Initialize Project Settings =="
+	read -p "Press any key to Initialize application" temp
+	echo ""
+
+	npm init
+
+	sed -i '/"scripts": {/a \
+	"dev": "nodemon app.js",\
+	"start": "node app.js", ' package.json	
+}
+
+# Update local GIT
+updateLocalGit() {
+	git init
+	git add *
+	git add .gitignore .prettierrc .prettierignore
+	git commit -m "first initialize commit"
+	git branch -M $branchName	
+}
+
+# Initialize Github
+initGithub() {
+	echo ""
+	read -p "Use github repository? (y/n): " useGithub
+	if [ $useGithub = "y" ] ; then
+		echo ""
+		read -p "Github username: " ghUsername
+		read -p "Using HTTPS or SSH? (https/ssh)" ghMethod
+		if [ $ghMethod="https" ] ; then
+			git remote add origin https://github.com/$ghUsername/$repoName.git
+			git push -u origin $branchName
+			git config --global credential.helper store
+		elif [ $ghMethod="ssh" ] ; then
+			git remote add origin git@github.com:$ghUsername/$repoName.git
+			git remote set-url origin git@github.com:$ghUsername/$repoName.git
+			git push -u origin $branchName
+		else
+			echo "Invalid parameter"
+			echo "Skip Github config, you can manually config it later."
+		fi
+	fi	
+}
+
+# Finish Script
+finishScript() {
+	echo ""
+	read -p "Running VSCode after initialize? (y/n): " runCode
+
+	echo ""
+	read -p "Running applicaton in developer mode after initialize? (y/n): " runDev
+
+	echo ""
+	echo "Environment initialization successful."
+	echo ""
+	echo "========================================================"
+
+	if [ $runCode = "y" ] ; then
+		code .
 	fi
-fi
 
-echo ""
-read -p "Running VSCode after initialize? (y/n): " runCode
+	if [ $runDev = "y" ] ; then
+		npm run dev
+	fi	
+}
 
-echo ""
-read -p "Running applicaton in developer mode after initialize? (y/n): " runDev
+######################## End Functions ########################
 
-echo ""
-echo "Environment initialization successful."
-echo ""
-echo "========================================================"
 
-if [ $runCode="y" ] ; then
-	code .
-fi
+########################## Invoke ##########################
+#//////////////////////#
+welcome
+#//////////////////////#
+initLocalGit
+#//////////////////////#
+initProjectStructure
+#//////////////////////#
+installCommon
+#//////////////////////#
+installExpress
+#//////////////////////#
+initPrettier
+#//////////////////////#
+initSession
+#//////////////////////#
+pickMainStack
+#//////////////////////#
+initMainStack
+#//////////////////////#
+initFlashSwal
+#//////////////////////#
+initMulter
+#//////////////////////#
+initEJS
+#//////////////////////#
+initWelcomeHomepage
+#//////////////////////#
+# place app at last of init phase
+sed -i "/\/\/ End Initialize/i \
+const app = express()" app.js
+#//////////////////////#
+initProjectSettings
+#//////////////////////#
+updateLocalGit
+#//////////////////////#
+initGithub
+#//////////////////////#
+finishScript
+#//////////////////////#
 
-if [ $runDev="y" ] ; then
-	npm run dev
-fi
+######################## End Invoke ########################
+
+
+
 
 
 
