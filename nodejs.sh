@@ -255,7 +255,7 @@ EOF
 		sed -i "/\/\/ End Initialize/i \
 const session = require('express-session')" app.js
 	
-	sed -i "/\/\/ Middlewares/a \
+		sed -i "/\/\/ Middlewares/a \
 app.use(session({\n\
   	secret: 'secret key',\n\
 	cookie: {\n\
@@ -264,13 +264,13 @@ app.use(session({\n\
 	resave: true,\n\
 	saveUninitialized: true\n\
 }))" app.js	
+	fi
 	
-		sed -i "/\/\/ Connect database and running the server/a \
+	sed -i "/\/\/ Connect database and running the server/a \
 const serverPort = process.env.PORT || 3000\n\
 app.listen(serverPort, result => {\n\
   console.log(\`Listening on port \${serverPort}...\`)\n\
 })" app.js
-	fi
 }
 
 # INitialize Main stack
@@ -307,7 +307,7 @@ app.use(flash())" app.js
 initMulter() {
 	echo ""
 	read -p "Use Multer and Sharp-Multer? (y/n): " useMulter
-	if [ $useMulter ] ; then
+	if [ $useMulter = "y" ] ; then
 		echo "Installing multer sharp-multer"
 		npm i --save multer sharp-multer
 
@@ -531,22 +531,29 @@ EOF
 
 			cat > controllers/homeController.js << EOF
 exports.getHome=(req, res) => {
-	res.render('index', {
+	return res.render('index', {
 		pageTitle: '$repoName - Home',
 	})
 }
 
-exports.getHomeSwal=(req, res) => {
-	req.flash('flashSwal', {
-			type: 'success',
-			title: 'Setup Completed',
-			message: 'Connect-Flash-Swal ready',
-			details: 'Connect-Flash and SweetAlert2 setup successful.',
-			footer: '',
-		})
-		res.redirect('/')
-}
 EOF
+
+			if [ $useFlashSwal = "y" ] ; then
+				cat >> controllers/homeController.js << EOF
+exports.getHomeSwal = (req, res) => {
+	req.flash('flashSwal', {
+		type: 'success',
+		title: 'Setup Completed',
+		message: 'Connect-Flash-Swal ready',
+		details: 'Connect-Flash and SweetAlert2 setup successful.',
+		footer: '',
+	})
+	return res.redirect('/')
+}
+
+EOF
+			fi
+
 			sed -i '/<\!-- Main content -->/a \
 			<div class="container">\
 				<div class="welcome-box">\
@@ -629,17 +636,24 @@ EOF
 
 		else
 			cat > controllers/homeController.js << EOF
-exports.getHome=(req, res) => {
-	const html='''
+exports.getHome = (req, res) => {
+	const html = \`
 <!DOCTYPE html>
 <html lang="en">
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-		<!-- For Bootstrap -->
+		<!-- For Bootstrap 5 -->
 		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
 
+		<!-- Sweetalert2 -->
+		<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+		<!-- Favicon -->
+		<link rel="shortcut icon" href="images/favicon.png" type="image/x-icon">
+
+		<!-- Internal CSS -->
 		<link rel="stylesheet" href="css/main.css">
 		
 		<title>$repoName - Home</title>	
@@ -652,6 +666,7 @@ exports.getHome=(req, res) => {
 				<div class="welcome-box">
 					<h1><b>WELCOME HOMEPAGE</b></h1>
 					<h3><b>Environment initialization successful.</b></h3>
+					<hr/>
 					<h5>You are ready to roll</h5>
 					<p>
 						<!-- prettier-ignore -->
@@ -667,27 +682,26 @@ exports.getHome=(req, res) => {
 		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
 
 	</body>
-</html>
-'''
-	res.send(html)
+</html> \`
+	return res.send(html)
 }
 EOF
 		fi
 		
 		cat > routes/homeRoutes.js << EOF
-const routes=require('express').Router()
-const homeController=require('../controllers/homeController')
+const routes = require('express').Router()
+const homeController = require('../controllers/homeController')
 
 routes.get('/', homeController.getHome)
-routes.use('/flashswal', homeController.getHomeSwal)
 
 module.exports = routes
 EOF
+
 		sed -i "/\/\/ Routes/a \
-const homeRoutes=require('./routes/homeRoutes')\n\n\
+const homeRoutes = require('./routes/homeRoutes')\n\n\
 app.use(homeRoutes)" app.js
 
-	fi	
+	fi
 }
 
 # Initialize project settings
