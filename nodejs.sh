@@ -8,20 +8,71 @@ welcome() {
 	echo "===== NODEJS-EXPRESS ENVIRONMENT INITAILIZE SCRIPT ====="
 }
 
-# Initialize local GIT repository
-initLocalGit() {
+# Git Env
+initGitEnv() {
+	readmeFile=README.md
+	licenseFile=LICENSE
+	ignoreFile=.gitignore
+
 	echo ""
-	echo "== Initialize local Git repository =="
+	echo "== Initialize Git environment =="
 	read -p "Repository name: " repoName
+	read -p "Application name: " appName
 	read -p "Branch name (main, master or anything): " branchName
 
+	echo ""
+	read -p "Clone from github repository(SSH)? (y/n): " cloneGithub
+
+	if [ $cloneGithub = "y" ] ; then
+		initGithub
+	else
+		initLocalGit
+	fi
+
+}
+
+# Initialize Github repository
+initGithub() {
+	read -p "Github username: " ghUsername
+	echo ""
+	echo "== Initialize Github repository (SSH clone) =="
+	git clone git@github.com:$ghUsername/$repoName.git
+	cd $repoName
+
+	currentBranch=$(git branch)
+
+	# prepare basic files
+	if [ ! -f "$readmeFile" ] ; then
+		echo "# "$repoName >> README.md
+	fi
+	if [ ! -f "$licenseFile" ] ; then
+		echo "# "$repoName" LICENSE" >> LICENSE
+	fi
+	if [ ! -f "$ignoreFile" ] ; then
+		wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/.gitignore	
+	fi
+
+	git add .
+	git commit -m "Start initialize"
+	git push origin $currentBranch:$branchName
+	echo "$currentBranch:$branchName"
+
+	git branch -M $branchName
+	git pull
+	
+}
+
+# Initialize local GIT repository
+initLocalGit() {
 	mkdir $repoName
 	cd $repoName
 	echo "# "$repoName >> README.md
 	echo "# "$repoName" LICENSE" >> LICENSE.md
-
 	# .gitignore
-	wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/.gitignore	
+	wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/.gitignore
+
+	git init
+	git branch -M $branchName	
 }
 
 # Initialize Prettier
@@ -330,14 +381,14 @@ initEJS() {
 	echo ""
 	read -p "Use EJS view engine? (y/n): " useEJS
 	if [ $useEJS = "y" ] ; then
-		echo "Installing ejs"
+		echo "Installing ejs..."
 		npm i --save ejs
 
 		sed -i "/app.set('views', 'views')/a \
 app.set('view engine', 'ejs')" app.js
 
 		sed -i "/\/\/ Response local variable list/a \
-		res.locals.pageTitle = '$repoName'" app.js
+		res.locals.pageTitle = '$appName'" app.js
 
 		mkdir views/partials
 		cd views/partials
@@ -401,7 +452,7 @@ EOF
 EOF
 		fi
 
-		cd ../
+		cd ../ # current path: views/
 
 		cat > index.ejs << EOF
 <%- include('./partials/head.ejs') %>
@@ -427,7 +478,7 @@ EOF
 <%- include('./partials/connect-flash-swal.ejs') %>" index.ejs
 		fi
 
-		cd ../
+		cd ../ # current path: /
 
 		if [ $useFlashSwal = "y" ] ; then
 			sed -i "/\/\/ End Response local variable list/i \
@@ -483,7 +534,8 @@ initWelcomeHomepage() {
 		# favicon
 		cd public/images
 		wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/favicon.png
-		cd ../..
+
+		cd ../.. # current path: /
 
 		# CSS
 		cat > public/css/main.css << EOF
@@ -523,6 +575,19 @@ a:link {
 }
 
 EOF
+		
+		cat > routes/homeRoutes.js << EOF
+const routes = require('express').Router()
+const homeController = require('../controllers/homeController')
+
+routes.get('/', homeController.getHome)
+
+module.exports = routes
+EOF
+
+		sed -i "/\/\/ Routes/a \
+const homeRoutes = require('./routes/homeRoutes')\n\n\
+app.use(homeRoutes)" app.js
 
 		# EJS & Form Validator
 		if [ $useEJS = "y" ] ; then
@@ -530,17 +595,19 @@ EOF
 			read -p "Use client-side Form Validator? (y/n): " useFormValidator
 
 			cat > controllers/homeController.js << EOF
-exports.getHome=(req, res) => {
+exports.getHome = (req, res) => {
 	return res.render('index', {
-		pageTitle: '$repoName - Home',
+		pageTitle: '$appName - Home',
 	})
 }
 
 EOF
 
 			if [ $useFlashSwal = "y" ] ; then
+				echo ""
+				echo "Creating controller file..."				
 				cat >> controllers/homeController.js << EOF
-exports.getHomeSwal = (req, res) => {
+exports.postHomeSwal = (req, res) => {
 	req.flash('flashSwal', {
 		type: 'success',
 		title: 'Setup Completed',
@@ -552,8 +619,12 @@ exports.getHomeSwal = (req, res) => {
 }
 
 EOF
+				echo "Updating route file..."
+				sed -i "/module.exports = routes/i \
+routes.post('\/flashswal', homeController.postHomeSwal)\n" routes/homeRoutes.js
 			fi
 
+			echo "Updating view file..."
 			sed -i '/<\!-- Main content -->/a \
 			<div class="container">\
 				<div class="welcome-box">\
@@ -571,6 +642,7 @@ EOF
 
 		# Form validation
 			if [ useFormValidator ] ; then
+				echo "Applying form validator..."
 				cd public/js
 				wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/formValidator.js
 				wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/validationRules.js
@@ -656,7 +728,7 @@ exports.getHome = (req, res) => {
 		<!-- Internal CSS -->
 		<link rel="stylesheet" href="css/main.css">
 		
-		<title>$repoName - Home</title>	
+		<title>$appName - Home</title>	
 	</head>
 	<body>
 		<header></header>
@@ -687,20 +759,6 @@ exports.getHome = (req, res) => {
 }
 EOF
 		fi
-		
-		cat > routes/homeRoutes.js << EOF
-const routes = require('express').Router()
-const homeController = require('../controllers/homeController')
-
-routes.get('/', homeController.getHome)
-
-module.exports = routes
-EOF
-
-		sed -i "/\/\/ Routes/a \
-const homeRoutes = require('./routes/homeRoutes')\n\n\
-app.use(homeRoutes)" app.js
-
 	fi
 }
 
@@ -719,35 +777,18 @@ initProjectSettings() {
 }
 
 # Update local GIT
-updateLocalGit() {
-	git init
+updateGit() {
 	git add *
-	git add .gitignore .prettierrc .prettierignore
-	git commit -m "first initialize commit"
-	git branch -M $branchName	
-}
+	git add .gitignore
+	if [ $usePrettier = "y" ] ; then
+		git add .prettierrc .prettierignore
+	fi
 
-# Initialize Github
-initGithub() {
-	echo ""
-	read -p "Use github repository? (y/n): " useGithub
+	git commit -m "Initialize successful."
+
 	if [ $useGithub = "y" ] ; then
-		echo ""
-		read -p "Github username: " ghUsername
-		read -p "Using HTTPS or SSH? (https/ssh)" ghMethod
-		if [ $ghMethod="https" ] ; then
-			git remote add origin https://github.com/$ghUsername/$repoName.git
-			git push -u origin $branchName
-			git config --global credential.helper store
-		elif [ $ghMethod="ssh" ] ; then
-			git remote add origin git@github.com:$ghUsername/$repoName.git
-			git remote set-url origin git@github.com:$ghUsername/$repoName.git
-			git push -u origin $branchName
-		else
-			echo "Invalid parameter"
-			echo "Skip Github config, you can manually config it later."
-		fi
-	fi	
+		git push origin $branchName
+	fi
 }
 
 # Finish Script
@@ -779,7 +820,8 @@ finishScript() {
 #//////////////////////#
 welcome
 #//////////////////////#
-initLocalGit
+initGitEnv
+exit
 #//////////////////////#
 initProjectStructure
 #//////////////////////#
@@ -809,9 +851,7 @@ const app = express()" app.js
 #//////////////////////#
 initProjectSettings
 #//////////////////////#
-updateLocalGit
-#//////////////////////#
-initGithub
+updateGit
 #//////////////////////#
 finishScript
 #//////////////////////#
