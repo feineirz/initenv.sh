@@ -39,7 +39,13 @@ initGithub() {
 	git clone git@github.com:$ghUsername/$repoName.git
 	cd $repoName
 
-	currentBranch=$(git branch)
+	remoteBranch=$(git symbolic-ref --short HEAD)
+
+	if [ ! $remoteBranch = $branchName ] ; then
+		git checkout -b $branchName
+		git branch -t origin/$branchName
+		git push origin $branchName
+	fi
 
 	# prepare basic files
 	if [ ! -f "$readmeFile" ] ; then
@@ -54,12 +60,7 @@ initGithub() {
 
 	git add .
 	git commit -m "Start initialize"
-	git push origin $currentBranch:$branchName
-	echo "$currentBranch:$branchName"
-
-	git branch -M $branchName
-	git pull
-	
+	git push origin $branchName
 }
 
 # Initialize local GIT repository
@@ -72,7 +73,10 @@ initLocalGit() {
 	wget https://raw.githubusercontent.com/feineirz/initenv.sh/master/assests/.gitignore
 
 	git init
-	git branch -M $branchName	
+	git add .
+	git commit -m "first commit"
+	git checkout -b $branchName
+	
 }
 
 # Initialize Prettier
@@ -157,9 +161,10 @@ app.use((req, res, next) => {
 
 // Response local variables
 app.use((req, res, next) => {
-	// Response local variable list
+	res.locals.appName = '$appName'
+// Response local variable list
 
-	// End Response local variable list
+// End Response local variable list
 
 	next()
 })
@@ -388,7 +393,7 @@ initEJS() {
 app.set('view engine', 'ejs')" app.js
 
 		sed -i "/\/\/ Response local variable list/a \
-		res.locals.pageTitle = '$appName'" app.js
+	res.locals.pageTitle = '$appName'" app.js
 
 		mkdir views/partials
 		cd views/partials
@@ -628,6 +633,7 @@ routes.post('\/flashswal', homeController.postHomeSwal)\n" routes/homeRoutes.js
 			sed -i '/<\!-- Main content -->/a \
 			<div class="container">\
 				<div class="welcome-box">\
+					<div class="d-flex align-items-center" style="font-size: 120px"><img src="/images/favicon.png" height="90px" alt=""><%= appName %></div>\
 					<h1><b>WELCOME HOMEPAGE</b></h1>\
 					<h3><b>Environment initialization successful.</b></h3>\n\
 					<hr>\
@@ -654,7 +660,7 @@ routes.post('\/flashswal', homeController.postHomeSwal)\n" routes/homeRoutes.js
 
 				sed -i '/<\!-- form-validation here -->/a \
 		<form class="fv" action="\/flashswal" method="post">\
-			<div class="title"><h3>Test Form-Validator<\/h3><\/div>\
+			<div class="title"><h3>Form-Validator Tester<\/h3><\/div>\
 			<hr>\
 			<p><i>Please fill the form to test if Form-Validator works.<\/i><\/p>\
 			<div class="form-floating mb-3">\
@@ -695,8 +701,9 @@ routes.post('\/flashswal', homeController.postHomeSwal)\n" routes/homeRoutes.js
 				<label for="email">Email<\/label> \
 			<\/div>\n\
 			<div class="button-group">\
-				<button class="btn btn-primary validation-submit-entry" type="submit">Send<\/button>\
+				<button class="btn btn-primary w-100 validation-submit-entry" type="submit">Send<\/button>\
 			<\/div>\
+			<hr\/>
 		<\/form>' views/index.ejs
 
 				sed -i "/<%- include('.\/partials\/joint.ejs') %>/i \
@@ -778,7 +785,7 @@ initProjectSettings() {
 
 # Update local GIT
 updateGit() {
-	git add *
+	git add .
 	git add .gitignore
 	if [ $usePrettier = "y" ] ; then
 		git add .prettierrc .prettierignore
@@ -786,7 +793,7 @@ updateGit() {
 
 	git commit -m "Initialize successful."
 
-	if [ $useGithub = "y" ] ; then
+	if [ $cloneGithub = "y" ] ; then
 		git push origin $branchName
 	fi
 }
@@ -821,7 +828,6 @@ finishScript() {
 welcome
 #//////////////////////#
 initGitEnv
-exit
 #//////////////////////#
 initProjectStructure
 #//////////////////////#
