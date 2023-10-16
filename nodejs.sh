@@ -626,7 +626,7 @@ exports.postHomeSwal = (req, res) => {
 EOF
 				echo "Updating route file..."
 				sed -i "/module.exports = routes/i \
-routes.post('\/flashswal', homeController.postHomeSwal)\n" routes/homeRoutes.js
+routes.use('\/flashswal', homeController.postHomeSwal)\n" routes/homeRoutes.js
 			fi
 
 			echo "Updating view file..."
@@ -703,7 +703,7 @@ routes.post('\/flashswal', homeController.postHomeSwal)\n" routes/homeRoutes.js
 			<div class="button-group">\
 				<button class="btn btn-primary w-100 validation-submit-entry" type="submit">Send<\/button>\
 			<\/div>\
-			<hr\/>
+			<hr\/>\
 		<\/form>' views/index.ejs
 
 				sed -i "/<%- include('.\/partials\/joint.ejs') %>/i \
