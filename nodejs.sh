@@ -295,7 +295,7 @@ MYSQL_PASSWORD=''
 
 EOF
 	echo "Installing mysql2"
-	npm i --save mysql2
+	npm i --save sequelize mysql2
 	
 	cat > config/database.js << EOF
 const mysql = require('mysql2')
