@@ -292,6 +292,7 @@ MYSQL_HOST='127.0.0.1'
 MYSQL_DATABASE='$repoName'
 MYSQL_USER='root'
 MYSQL_PASSWORD=''
+MYSQL_PORT=3306
 
 EOF
 	echo "Installing mysql2"
@@ -304,6 +305,7 @@ exports.connectionPool=mysql.createPool({
 	database: process.env.MYSQL_DATABASE,
 	user: process.env.MYSQL_USER,
 	password: process.env.MYSQL_PASSWORD,
+	port: process.env.MYSQL_PORT,
 }).promise()
 EOF
 	
